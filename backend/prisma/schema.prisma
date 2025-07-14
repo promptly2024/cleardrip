@@ -18,6 +18,9 @@ model User {
   addressId String?  @unique
   password  String
 
+  isEmailVerified Boolean @default(false)
+  isPhoneVerified Boolean @default(false)
+
   loyaltyStatus LoyaltyStatus? @default(BRONZE)
   otpSessions   OTPSession[]
   services      Service[]
