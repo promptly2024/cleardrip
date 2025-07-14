@@ -44,3 +44,41 @@ export async function createUser(data: SignupInput) {
     })
     return result
 }
+
+export async function findAndUpdateUser(userId: string, data: Partial<SignupInput>) {
+    // Exclude password from update, but allow address update
+    const { address, password, ...userFields } = data;
+    const updateData: any = { ...userFields };
+
+    // Fetch current user to determine if address exists
+    const existingUser = await findUserById(userId);
+
+    if (address) {
+        if (existingUser?.address) {
+            // Update existing address
+            updateData.address = {
+                update: address,
+            };
+        } else {
+            // Create new address
+            updateData.address = {
+                create: address,
+            };
+        }
+    }
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: { address: true },
+    });
+
+    return updatedUser;
+}
+
+export async function findUserById(userId: string) {
+    return prisma.user.findUnique({
+        where: { id: userId },
+        include: { address: true }
+    })
+}

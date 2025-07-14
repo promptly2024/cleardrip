@@ -4,7 +4,7 @@ import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema }
 import { ZodError } from "zod"
 import { generateToken } from "../utils/jwt"
 import { removeAuthCookie, setAuthCookie } from "../utils/cookies"
-import { createUser, findUserByEmailOrPhone } from "../services/user.service"
+import { createUser, findAndUpdateUser, findUserByEmailOrPhone } from "../services/user.service"
 import { sendError } from "../utils/errorResponse"
 import { logger } from "../lib/logger"
 import { comparePassword } from "../utils/hash"
@@ -95,5 +95,25 @@ export const resetPasswordHandler = async (req: FastifyRequest, reply: FastifyRe
     } catch (error) {
         logger.error(error, "Reset password error")
         return sendError(reply, 500, "Reset password failed", error)
+    }
+}
+
+export const updateProfileHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return reply.code(401).send({ error: "Unauthorized" })
+        }
+        const body = signupSchema.parse(req.body)
+        // Update user profile logic
+        const updatedUser = await findAndUpdateUser(user.userId, body)
+        const { password, ...safeUser } = updatedUser
+        return reply.code(200).send({
+            message: "Profile updated successfully",
+            user: safeUser
+        })
+    } catch (error) {
+        logger.error(error, "Update profile error")
+        return sendError(reply, 500, "Update profile failed", error)
     }
 }
