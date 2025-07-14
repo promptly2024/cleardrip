@@ -26,18 +26,21 @@ export async function findUserByEmailOrPhone(email: string, phone?: string, role
 export async function createUser(data: SignupInput) {
     const hashedPassword = await hashPassword(data.password)
 
-    const address = await prisma.address.create({
-        data: data.address
-    })
+    const result = await prisma.$transaction(async (tx) => {
+        const address = await tx.address.create({
+            data: data.address
+        })
 
-    return prisma.user.create({
-        data: {
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            password: hashedPassword,
-            addressId: address.id
-        },
-        include: { address: true }
+        return tx.user.create({
+            data: {
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                password: hashedPassword,
+                addressId: address.id
+            },
+            include: { address: true }
+        })
     })
+    return result
 }
