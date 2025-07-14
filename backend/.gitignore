@@ -3,6 +3,9 @@ node_modules/
 
 # Compiled output
 dist/
+dist/
+*.js
+
 
 # Environment variables
 .env
@@ -16,3 +19,4 @@ logs/
 .DS_Store
 
 /src/generated/prisma
+

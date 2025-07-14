@@ -4,6 +4,17 @@ import { verifyToken } from "../utils/jwt"
 
 type Role = 'ADMIN' | 'USER' | 'SUPER_ADMIN'
 
+// Extend FastifyRequest to include user property
+declare module "fastify" {
+    interface FastifyRequest {
+        user?: {
+            userId: string
+            email: string
+            role: Role
+        }
+    }
+}
+
 export function requireRole(allowedRoles: Role[]) {
     return async function (req: FastifyRequest, reply: FastifyReply) {
         const token = req.cookies?.admin_token || req.cookies?.user_token

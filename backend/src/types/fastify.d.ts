@@ -1,4 +1,4 @@
-// types/fastify.d.ts
+// backend/src/types/fastify.d.ts
 import 'fastify'
 
 declare module 'fastify' {
@@ -10,3 +10,6 @@ declare module 'fastify' {
         }
     }
 }
+
+export { }; // This is to ensure that the FastifyRequest type is extended with the user property
+// Now it is a module and the FastifyRequest type is properly extended
