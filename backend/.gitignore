@@ -14,3 +14,5 @@ logs/
 # IDE configs
 .vscode/
 .DS_Store
+
+/src/generated/prisma

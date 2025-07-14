@@ -1,0 +1,175 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  address   Address? @relation(name: "UserAddress", fields: [addressId], references: [id])
+  addressId String?  @unique
+  password  String
+
+  loyaltyStatus LoyaltyStatus? @default(BRONZE)
+  otpSessions   OTPSession[]
+  services      Service[]
+  subscriptions Subscription[]
+  tdsLogs       TDSLog[]
+  notifications Notification[]
+  whatsappLogs  WhatsAppLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Address {
+  id         String @id @default(uuid())
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String
+
+  user User? @relation(name: "UserAddress")
+}
+
+enum LoyaltyStatus {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model Admin {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String // hashed password
+  role      AdminRole @default(STAFF)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum AdminRole {
+  SUPERADMIN
+  STAFF
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Float
+  description String?
+  inventory   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id             String        @id @default(uuid())
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+  type           ServiceType
+  status         ServiceStatus @default(PENDING)
+  scheduledDate  DateTime
+  beforeImageUrl String? // Cloudinary URL
+  afterImageUrl  String? // Cloudinary URL
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+enum ServiceType {
+  AMC
+  URGENT
+}
+
+enum ServiceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Subscription {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  planType     String // e.g. "Monthly", "Annual", etc.
+  startDate    DateTime
+  endDate      DateTime
+  loyaltyBadge String? // optional display badge
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TDSLog {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  tdsValue  Int
+  timestamp DateTime @default(now())
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  user      User               @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  message   String
+  status    NotificationStatus
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+}
+
+enum NotificationType {
+  FCM
+  WHATSAPP
+  EMAIL
+}
+
+enum NotificationStatus {
+  SENT
+  PENDING
+  FAILED
+}
+
+model WhatsAppLog {
+  id          String              @id @default(uuid())
+  user        User                @relation(fields: [userId], references: [id])
+  userId      String
+  messageType WhatsAppMessageType
+  content     String
+  timestamp   DateTime            @default(now())
+}
+
+enum WhatsAppMessageType {
+  TEXT
+  BUTTON
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+model OTPSession {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  otpCode   String
+  channel   OTPChannel
+  expiresAt DateTime
+  verified  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+}
+
+enum OTPChannel {
+  EMAIL
+  PHONE
+}
