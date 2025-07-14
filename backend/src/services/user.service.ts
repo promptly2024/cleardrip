@@ -3,12 +3,21 @@ import { prisma } from "../lib/prisma"
 import { SignupInput } from "../schemas/auth.schema"
 import { hashPassword } from "../utils/hash"
 
-export async function findUserByEmailOrPhone(email: string, phone?: string) {
-    return prisma.user.findFirst({
+export async function findUserByEmailOrPhone(email: string, phone?: string, role: string = "USER") {
+    if (role === 'USER') {
+        return prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { phone: phone }
+                ]
+            }
+        })
+    }
+    return prisma.admin.findFirst({
         where: {
             OR: [
-                { email: email },
-                { phone: phone }
+                { email: email }
             ]
         }
     })
