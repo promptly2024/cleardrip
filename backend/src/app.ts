@@ -9,7 +9,19 @@ const buildApp = () => {
     const fastify = Fastify({ logger: true });
 
     fastify.register(import('@fastify/formbody'))
-    fastify.register(import('@fastify/cors'))
+    fastify.register(import('@fastify/cors'),  {
+        origin: (origin, callback) => {
+            const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'), false);
+            }
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+    })
     fastify.register(fastifyCookie, {
         secret: COOKIE_SECRET,
     });
