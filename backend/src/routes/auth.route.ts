@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify"
-import { forgotPasswordHandler, resetPasswordHandler, signinHandler, signoutHandler, signupHandler, updateProfileHandler } from "../controllers/auth.user.controller"
-import { meHandler } from "../controllers/auth.me.controller"
+import { forgotPasswordHandler, resetPasswordHandler, signinHandler, signoutHandler, signupHandler, updateProfileHandler } from "../controllers//auth/auth.user.controller"
+import { meHandler } from "../controllers/auth/auth.me.controller"
 import { requireRole } from "../middleware/requireRole"
 
 export default async function authRoutes(fastify: FastifyInstance) {

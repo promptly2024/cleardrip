@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify"
-import { findUserByEmailOrPhone } from "../services/user.service"
-import { sendError } from "../utils/errorResponse"
-import { logger } from "../lib/logger"
+import { findUserByEmailOrPhone } from "../../services/user.service"
+import { sendError } from "../../utils/errorResponse"
+import { logger } from "../../lib/logger"
 
 export const meHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {

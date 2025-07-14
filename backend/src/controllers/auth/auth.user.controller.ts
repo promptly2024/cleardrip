@@ -1,13 +1,13 @@
 // backend/src/controllers/auth.controller.ts
 import { FastifyReply, FastifyRequest } from "fastify"
-import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema } from "../schemas/auth.schema"
-import { ZodError } from "zod"
-import { generateToken } from "../utils/jwt"
-import { removeAuthCookie, setAuthCookie } from "../utils/cookies"
-import { createUser, findAndUpdateUser, findUserByEmailOrPhone } from "../services/user.service"
-import { sendError } from "../utils/errorResponse"
-import { logger } from "../lib/logger"
-import { comparePassword } from "../utils/hash"
+import { logger } from "../../lib/logger"
+import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema } from "../../schemas/auth.schema"
+import { createUser, findAndUpdateUser, findUserByEmailOrPhone } from "../../services/user.service";
+import { removeAuthCookie, setAuthCookie } from "../../utils/cookies";
+import { sendError } from "../../utils/errorResponse";
+import { generateToken } from "../../utils/jwt";
+import { comparePassword } from "../../utils/hash";
+import { ZodError } from "zod";
 
 export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {

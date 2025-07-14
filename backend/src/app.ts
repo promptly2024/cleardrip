@@ -1,8 +1,9 @@
 // src/app.ts
 import Fastify from 'fastify';
-import authRoutes from './routes/auth.route';
+import authRoutes from '@/routes/auth.route';
 import fastifyCookie from "@fastify/cookie"
-import { COOKIE_SECRET } from './config/env';
+import { COOKIE_SECRET } from '@/config/env';
+import productRoutes from '@/routes/product.route';
 
 const buildApp = () => {
     const fastify = Fastify({ logger: true });
@@ -15,6 +16,7 @@ const buildApp = () => {
 
     // Register routes
     fastify.register(authRoutes, { prefix: "/api" })
+    fastify.register(productRoutes, { prefix: "/api" })
 
     return fastify;
 };
