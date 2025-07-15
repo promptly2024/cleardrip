@@ -41,11 +41,11 @@ export const signinHandler = async (req: FastifyRequest, reply: FastifyReply) =>
         const body = signinSchema.parse(req.body)
         const user = await findUserByEmailOrPhone(body.email)
         if (!user) {
-            return reply.code(404).send({ error: "User not found" })
+            return reply.code(404).send({ error: "Invalid credentials" })
         }
         const isPasswordvalid = await comparePassword(body.password, user.password)
         if (!isPasswordvalid) {
-            return reply.code(401).send({ error: "Invalid password" })
+            return reply.code(401).send({ error: "Invalid credentials" })
         }
         const token = generateToken({ userId: user.id, email: user.email, role: "USER" })
         setAuthCookie(reply, token, "USER")
@@ -61,7 +61,6 @@ export const signinHandler = async (req: FastifyRequest, reply: FastifyReply) =>
         logger.error(error, "Signin error")
         return sendError(reply, 400, "Signin failed", error)
     }
-    return reply.code(200).send({ message: "Signin successful" })
 }
 
 export const signoutHandler = async (req: FastifyRequest, reply: FastifyReply) => {

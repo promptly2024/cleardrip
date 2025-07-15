@@ -6,7 +6,7 @@ import { FastifyInstance } from "fastify"
 
 export default async function authRoutes(fastify: FastifyInstance) {
     // Public user routes
-    // fastify.post("/signup", signupHandler)
+    fastify.post("/signup", signupHandler)
     fastify.post("/signin", signinHandler)
     fastify.post("/signout", signoutHandler)
     fastify.post("/user/forgot-password", forgotPasswordHandler)

@@ -10,5 +10,5 @@ export default async function tdsRoutes(fastify: FastifyInstance) {
     fastify.get("/tds/recent", { preHandler: requireRole(["USER", "ADMIN", "SUPER_ADMIN"]) }, GetRecentTDSHandler);
 
     // Admins can retrieve TDS logs for a specific user.
-    fastify.get("/tds/recent/:userId?page=1&skip=1", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, GetRecentTDSHandler);
+    fastify.get("/tds/recent/:userId", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, GetRecentTDSHandler);
 }
