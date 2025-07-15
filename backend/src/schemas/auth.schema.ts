@@ -14,6 +14,8 @@ export const signupSchema = z.object({
     }),
 })
 
+export const updateUserSchema = signupSchema.partial()
+
 export type SignupInput = z.infer<typeof signupSchema>
 
 export const signinSchema = z.object({
@@ -48,3 +50,9 @@ export const adminCreateSchema = z.object({
 })
 
 export type AdminSignInInput = z.infer<typeof adminSignInSchema>
+
+export const updatePasswordSchema = z.object({
+    oldPassword: z.string().min(6, { message: "Old password must be at least 6 characters long" }),
+    newPassword: z.string().min(6, { message: "New password must be at least 6 characters long" }),
+})
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>

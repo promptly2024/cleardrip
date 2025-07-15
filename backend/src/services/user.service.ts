@@ -1,9 +1,11 @@
-// backend/src/controllers/auth.controller.ts
 import { prisma } from "../lib/prisma"
 import { SignupInput } from "../schemas/auth.schema"
 import { hashPassword } from "../utils/hash"
 
-export async function findUserByEmailOrPhone(email: string, phone?: string, role: string = "USER") {
+export async function findUserByEmailOrPhone(email?: string, phone?: string, role: string = "USER") {
+    if (!email && !phone) {
+        throw new Error("Email or Phone required.");
+    }
     if (role === 'USER') {
         return prisma.user.findFirst({
             where: {
@@ -81,4 +83,12 @@ export async function findUserById(userId: string) {
         where: { id: userId },
         include: { address: true }
     })
+}
+
+export async function updateUserPassword(userId: string, newPassword: string) {
+    const hashedPassword = await hashPassword(newPassword);
+    return prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword }
+    });
 }

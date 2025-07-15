@@ -1,8 +1,8 @@
 // backend/src/controllers/auth.controller.ts
 import { FastifyReply, FastifyRequest } from "fastify"
 import { logger } from "@/lib/logger"
-import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema } from "@/schemas/auth.schema"
-import { createUser, findAndUpdateUser, findUserByEmailOrPhone } from "@/services/user.service";
+import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema, updatePasswordSchema, updateUserSchema } from "@/schemas/auth.schema"
+import { createUser, findAndUpdateUser, findUserByEmailOrPhone, updateUserPassword } from "@/services/user.service";
 import { removeAuthCookie, setAuthCookie } from "@/utils/cookies";
 import { sendError } from "@/utils/errorResponse";
 import { generateToken } from "@/utils/jwt";
@@ -49,6 +49,11 @@ export const signinHandler = async (req: FastifyRequest, reply: FastifyReply) =>
         }
         const token = generateToken({ userId: user.id, email: user.email, role: "USER" })
         setAuthCookie(reply, token, "USER")
+        const { password, ...safeUser } = user
+        return reply.code(200).send({
+            message: "Signin successful",
+            user: safeUser
+        })
     } catch (error) {
         if (error instanceof ZodError) {
             return sendError(reply, 400, "Validation error", error.issues)
@@ -104,9 +109,13 @@ export const updateProfileHandler = async (req: FastifyRequest, reply: FastifyRe
         if (!user) {
             return reply.code(401).send({ error: "Unauthorized" })
         }
-        const body = signupSchema.parse(req.body)
+        const body = updateUserSchema.safeParse(req.body)
+        if (!body.success) {
+            return sendError(reply, 400, "Validation error", body.error.issues)
+        }
+
         // Update user profile logic
-        const updatedUser = await findAndUpdateUser(user.userId, body)
+        const updatedUser = await findAndUpdateUser(user.userId, body.data)
         const { password, ...safeUser } = updatedUser
         return reply.code(200).send({
             message: "Profile updated successfully",
@@ -115,5 +124,29 @@ export const updateProfileHandler = async (req: FastifyRequest, reply: FastifyRe
     } catch (error) {
         logger.error(error, "Update profile error")
         return sendError(reply, 500, "Update profile failed", error)
+    }
+}
+
+export const updatePassword = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return reply.code(401).send({ error: "Unauthorized" })
+        }
+        const body = updatePasswordSchema.safeParse(req.body)
+        if (!body.success) {
+            return sendError(reply, 400, "Validation error", body.error.issues)
+        }
+
+        // Update user password logic
+        const updatedUser = await updateUserPassword(user.userId, body.data.newPassword)
+        const { password, ...safeUser } = updatedUser
+        return reply.code(200).send({
+            message: "Password updated successfully",
+            user: safeUser
+        })
+    } catch (error) {
+        logger.error(error, "Update password error")
+        return sendError(reply, 500, "Update password failed", error)
     }
 }
