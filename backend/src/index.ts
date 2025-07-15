@@ -1,8 +1,8 @@
-import buildApp from '@/app';
 import { PORT } from '@/config/env';
+import { buildApp } from './app';
 
 const start = async () => {
-    const fastify = buildApp();
+    const fastify = await buildApp();
 
     try {
         await fastify.listen({ port: PORT });

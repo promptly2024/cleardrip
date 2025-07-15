@@ -35,3 +35,16 @@ export const resetPasswordSchema = z.object({
 })
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
+
+export const adminSignInSchema = z.object({
+    email: z.string().email({ message: "Invalid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
+})
+
+export const adminCreateSchema = z.object({
+    email: z.string().email({ message: "Invalid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
+    name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
+})
+
+export type AdminSignInInput = z.infer<typeof adminSignInSchema>
