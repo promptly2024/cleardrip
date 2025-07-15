@@ -1,4 +1,4 @@
-export interface ProductsResponse {
+export interface Product {
     id: string;
     name: string;
     price: string;
@@ -8,6 +8,10 @@ export interface ProductsResponse {
     updatedAt: string;
 }
 
-export interface ProductCreateData {
-    
+export interface ProductsResponse {
+    products: Product[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPage: number;
 }

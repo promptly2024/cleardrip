@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SigninData } from '@/lib/types/auth/userAuth';
-import { AuthService } from '@/lib/httpClient/auth';
+import { AuthService } from '@/lib/httpClient/userAuth';
 import { Alert } from '@/components/core/Alert';
 import { Input } from '@/components/core/Input';
 import { Button } from '@/components/core/Button';
