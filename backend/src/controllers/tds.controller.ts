@@ -17,8 +17,10 @@ export const LogNewTDSHandler = async (req: FastifyRequest, reply: FastifyReply)
     }
     try {
         const newTDS = await logNewTDS(tdsData, userId);
-        // if the tds is more than 
-        // SendNotification();
+        // if the tds is more than 100
+        if (newTDS.tdsValue > 100) {
+            // SendNotification();
+        }
         return reply.send(newTDS);
     } catch (error) {
         return sendError(reply, 500, "Failed to log TDS", error);
