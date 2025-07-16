@@ -7,8 +7,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, ChevronRight, Package, AlertCircle, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/lib/types/products';
-import { Products } from '@/lib/httpClient/product';
 import { useRouter } from 'next/navigation';
+import { ProductsClass } from '@/lib/httpClient/product';
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -30,7 +30,7 @@ export default function ProductsPage() {
         try {
             setLoading(true);
             setError(null);
-            const data = await Products.getAllProducts(currentPage, limit);
+            const data = await ProductsClass.getAllProducts(currentPage, limit);
             setProducts(data.products);
             setTotalProducts(data.total);
         } 

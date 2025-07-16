@@ -2,7 +2,7 @@ import { Product, ProductsResponse } from "../types/products";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-export class Products {
+export class ProductsClass {
     static async getAllProducts(page: number, limit: number): Promise<ProductsResponse> {
         try {
             const response = await fetch(`${API_BASE_URL}/products?page=${page}&limit=${limit}`, {
@@ -35,7 +35,6 @@ export class Products {
 
     static async getProductById(id: string): Promise<Product>{
         try {
-            console.log("get products call gone");
             const response = await fetch(`${API_BASE_URL}/product/${id}`, {
                 method: 'GET',
                 headers: {

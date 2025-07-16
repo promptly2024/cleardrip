@@ -39,43 +39,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 method: 'GET',
                 credentials: 'include',
             });
-
+            
             const data = await response.json();
+            console.log("Auth context response ", data);
 
-            if(!response.ok || !data.authenticated){
+            if(!response.ok){
                 throw new Error(data?.error || "Not Authenticated");
             }
 
+            const role = data.role;
+            const adminRole = data.user?.adminRole ?? null;
             setState({
                 authenticated: true,
-                role: data.role,
-                adminRole: data.user.adminRole,
+                role,
+                adminRole,
                 user: data.user,
                 authLoading: false,
-                isSuperAdmin: data.user.adminRole === 'SUPER_ADMIN',
+                isSuperAdmin: adminRole === "SUPER_ADMIN",
             });
         }
         catch(error){ 
+            console.error('Error Fetching the Authentication', error);
             setState({
                 authenticated: false,
                 role: null,
                 adminRole: null,
                 user: null,
-                authLoading: true,
+                authLoading: false,
                 isSuperAdmin: false
-            });
-
-            console.error('Error Fetching the Authentication', error);
-        }
-        finally {
-            setState(prev => {
-                if(!prev.authLoading) {
-                    return prev;
-                }
-                return {
-                    ...prev,
-                    authLoading: false
-                }
             });
         }
     };
@@ -94,8 +85,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     break;
                 case 'SUPER_ADMIN':
                     logoutUrl = `${API_BACKEND_URL}/auth/admin/logout`;
+                    break;
                 case 'USER':
                     logoutUrl = `${API_BACKEND_URL}/user/logout`;
+                    break;
                 default: 
                     console.warn('No role found, skipping logout API Call');
                     break;
@@ -131,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isSuperAdmin: state.adminRole === 'SUPER_ADMIN',
         logout,
     };
-
+    
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

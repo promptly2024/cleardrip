@@ -15,8 +15,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Product } from '@/lib/types/products';
-import { Products } from '@/lib/httpClient/product';
 import { useRouter } from 'next/navigation';
+import { ProductsClass } from '@/lib/httpClient/product';
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -43,7 +43,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         try {
             setLoading(true);
             setError(null);
-            const productData = await Products.getProductById(productId);
+            const productData = await ProductsClass.getProductById(productId);
             setProduct(productData);
         } 
         catch (err) {
