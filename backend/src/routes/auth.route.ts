@@ -1,6 +1,6 @@
 import { AdminSignInHandler, AdminGetAllListHandler, CreateAdminUserHandler } from "@/controllers/auth/auth.admin.controller"
 import { meHandler } from "@/controllers/auth/auth.me.controller"
-import { signinHandler, signoutHandler, signupHandler, forgotPasswordHandler, resetPasswordHandler, updateProfileHandler } from "@/controllers/auth/auth.user.controller"
+import { signinHandler, signoutHandler, signupHandler, forgotPasswordHandler, resetPasswordHandler, updateProfileHandler, updateFCMTokenHandler } from "@/controllers/auth/auth.user.controller"
 import { requireRole } from "@/middleware/requireRole"
 import { FastifyInstance } from "fastify"
 
@@ -11,6 +11,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.post("/signout", signoutHandler)
     fastify.post("/user/forgot-password", forgotPasswordHandler)
     fastify.post("/user/reset-password", resetPasswordHandler)
+    fastify.put("/user/fcm-token", { preHandler: requireRole(["USER"]) }, updateFCMTokenHandler)
 
     // Authenticated user routes
     fastify.post("/update-profile", { preHandler: requireRole(["USER"]) }, updateProfileHandler)

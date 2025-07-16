@@ -4,6 +4,11 @@ import { sendError } from "@/utils/errorResponse";
 import { getRecentTDSLogs, logNewTDS } from "@/services/tds.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
+import { notificationQueue, notificationQueueName } from "@/queues/notification.queue";
+
+/**
+ * Documentation for TDS Controller
+ */
 
 export const LogNewTDSHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const parsed = tdsSchema.safeParse(req.body);
@@ -19,7 +24,21 @@ export const LogNewTDSHandler = async (req: FastifyRequest, reply: FastifyReply)
         const newTDS = await logNewTDS(tdsData, userId);
         // if the tds is more than 100
         if (newTDS.tdsValue > 100) {
-            // SendNotification();
+            await notificationQueue.add(notificationQueueName, {
+                userId,
+                type: "push",
+                payload: {
+                    title: "High TDS Alert",
+                    message: `Your TDS level is ${newTDS.tdsValue}, which is above the recommended limit. Please take necessary actions.`,
+                },
+            });
+            await notificationQueue.add(notificationQueueName, {
+                userId,
+                type: "whatsapp",
+                payload: {
+                    message: `Your TDS level is ${newTDS.tdsValue}, which is above the recommended limit. Please take necessary actions.`,
+                },
+            });
         }
         return reply.send(newTDS);
     } catch (error) {

@@ -2,7 +2,7 @@
 import { FastifyReply, FastifyRequest } from "fastify"
 import { logger } from "@/lib/logger"
 import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema, updatePasswordSchema, updateUserSchema } from "@/schemas/auth.schema"
-import { createUser, findAndUpdateUser, findUserByEmailOrPhone, updateUserPassword } from "@/services/user.service";
+import { createUser, findAndUpdateUser, findUserByEmailOrPhone, updateUserFCMToken, updateUserPassword } from "@/services/user.service";
 import { removeAuthCookie, setAuthCookie } from "@/utils/cookies";
 import { sendError } from "@/utils/errorResponse";
 import { generateToken } from "@/utils/jwt";
@@ -147,5 +147,28 @@ export const updatePassword = async (req: FastifyRequest, reply: FastifyReply) =
     } catch (error) {
         logger.error(error, "Update password error")
         return sendError(reply, 500, "Update password failed", error)
+    }
+}
+
+export const updateFCMTokenHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return sendError(reply, 400, "Unauthorised");
+        }
+        const { fcmToken } = req.body as { fcmToken: string };
+        if (!fcmToken) {
+            return sendError(reply, 400, "FCM token is required");
+        }
+
+        // Update user's FCM token
+        const updatedUser = await updateUserFCMToken(user.userId, fcmToken);
+        return reply.code(200).send({
+            message: "FCM token updated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        logger.error(error, "\nUpdate FCM token error");
+        return sendError(reply, 500, "Update FCM token failed", error);
     }
 }

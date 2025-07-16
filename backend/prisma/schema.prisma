@@ -18,6 +18,9 @@ model User {
   addressId String?  @unique
   password  String
 
+  fcmToken String?
+  whatsappNumber String?
+
   isEmailVerified Boolean @default(false)
   isPhoneVerified Boolean @default(false)
 

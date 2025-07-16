@@ -92,3 +92,17 @@ export async function updateUserPassword(userId: string, newPassword: string) {
         data: { password: hashedPassword }
     });
 }
+
+export async function updateUserFCMToken(userId: string, fcmToken: string) {
+    return prisma.user.update({
+        where: { id: userId },
+        data: { fcmToken }
+    });
+}
+
+export async function getAllUsersId() {
+    const users = await prisma.user.findMany({
+        select: { id: true }
+    });
+    return users.map(user => user.id);
+}

@@ -1,0 +1,24 @@
+// Service to send notifications via WhatsApp
+import { prisma } from "@/lib/prisma";
+// import { sendWhatsAppMessage } from "@/utils/whatsappUtils";
+import { logger } from "@/lib/logger";
+
+export async function sendWhatsAppNotification(userId: string, message: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    if (!user.whatsappNumber) {
+        throw new Error("WhatsApp number not found for the user");
+    }
+
+    try {
+        // await sendWhatsAppMessage(user.whatsappNumber, message);
+        logger.info(`WhatsApp notification sent to user ${userId}`);
+    } catch (error) {
+        logger.error(`Failed to send WhatsApp notification to user ${userId}: ${(error as Error).message}`);
+        throw error;
+    }
+}

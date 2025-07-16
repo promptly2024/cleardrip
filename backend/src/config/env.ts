@@ -13,3 +13,9 @@ export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string || '7d';
 export const COOKIE_SECRET = process.env.COOKIE_SECRET || (() => {
     throw new Error("COOKIE_SECRET not set in environment variables");
 })();
+
+export const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+export const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
+export const REDIS_URL = process.env.REDIS_URL || (() => {
+    throw new Error("REDIS_URL not set in environment variables");
+})();
