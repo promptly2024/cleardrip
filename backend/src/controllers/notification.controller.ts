@@ -1,6 +1,8 @@
 import { notificationQueue, notificationQueueName } from "@/queues/notification.queue";
+import { SaveNotification } from "@/services/notification.service";
 import { getAllUsersId } from "@/services/user.service";
 import { sendError } from "@/utils/errorResponse";
+import { NotificationType } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 type NotificationBody = {
@@ -25,6 +27,18 @@ export const sendNotificationHandler = async (request: FastifyRequest, reply: Fa
         type,
         payload
     });
+    // Update the notification in DB
+    const notification = {
+        userId,
+        type: type as NotificationType,
+        message: payload.message,
+        status: "PENDING",
+        sentAt: null,
+        createdAt: new Date()
+    };
+
+    // Save in db
+    await SaveNotification(notification);
 
     return reply.status(202).send({ message: "Notification job added to the queue" });
 };
@@ -44,6 +58,19 @@ export const sendNotificationToAllHandler = async (request: FastifyRequest, repl
                     payload
                 })
             )
+        );
+        // Update the notification in DB
+        const notifications = users.map((userId: string) => ({
+            userId,
+            type: type as NotificationType,
+            message: payload.message,
+            status: "PENDING",
+            sentAt: null,
+            createdAt: new Date()
+        }));
+        // Save in db
+        await Promise.all(
+            notifications.map(notification => SaveNotification(notification))
         );
 
         return reply.status(202).send({ message: "Notification jobs added to the queue for all users" });
@@ -67,6 +94,19 @@ export const sendBatchNotificationHandler = async (request: FastifyRequest, repl
                     payload
                 })
             )
+        );
+        // Update the notification in DB
+        const notifications = userIds.map((userId) => ({
+            userId,
+            type: type as NotificationType,
+            message: payload.message,
+            status: "PENDING",
+            sentAt: null,
+            createdAt: new Date()
+        }));
+        // Save in db
+        await Promise.all(
+            notifications.map(notification => SaveNotification(notification))
         );
 
         return reply.status(202).send({ message: "Notification jobs added to the queue for specified users" });
