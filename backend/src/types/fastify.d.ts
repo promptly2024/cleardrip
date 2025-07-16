@@ -13,3 +13,5 @@ declare module 'fastify' {
 
 export { }; // This is to ensure that the FastifyRequest type is extended with the user property
 // Now it is a module and the FastifyRequest type is properly extended
+
+// Currently Not in Use Because TypeScript does not able to read this file

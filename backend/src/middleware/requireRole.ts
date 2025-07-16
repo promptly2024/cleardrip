@@ -20,7 +20,7 @@ export function requireRole(allowedRoles: Role[]) {
         const token = req.cookies?.admin_token || req.cookies?.user_token
 
         if (!token) {
-            return reply.code(401).send({ error: "Unauthorized: Token missing" })
+            return reply.code(401).send({ error: "You must be logged in to access this resource" })
         }
 
         try {

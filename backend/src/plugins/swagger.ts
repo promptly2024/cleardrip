@@ -11,7 +11,7 @@ export default async function swaggerPlugin(app: FastifyInstance) {
                 version: '1.0.0',
             },
             servers: [
-                { url: 'http://localhost:3000', description: 'Local Dev' },
+                { url: 'http://localhost:3001', description: 'Local Dev' },
             ],
         },
     })
