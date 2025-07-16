@@ -21,7 +21,7 @@ async function main() {
 
     // Hash passwords
     const userPassword = await bcrypt.hash('12345678', 10);
-    const adminPassword = await bcrypt.hash('1', 10);
+    const adminPassword = await bcrypt.hash('123456', 10);
 
     // Create addresses
     const addresses = await Promise.all([
@@ -121,7 +121,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Super Admin',
-                email: '1@1',
+                email: 'superadmin@gmail.com',
                 password: adminPassword,
                 role: 'SUPERADMIN'
             }
@@ -129,7 +129,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Staff Admin',
-                email: '1@2',
+                email: 'staffadmin@gmail.com',
                 password: adminPassword,
                 role: 'STAFF'
             }

@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import { SignupData } from '@/lib/types/auth';
-import { AuthService } from '@/lib/httpClient/auth';
+import { SignupData } from '@/lib/types/auth/userAuth';
+import { AuthService } from '@/lib/httpClient/userAuth';
 import { Input } from '@/components/core/Input';
 import { Button } from '@/components/core/Button';
 

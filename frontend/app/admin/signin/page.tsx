@@ -8,6 +8,7 @@ import { AuthService } from '@/lib/httpClient/userAuth';
 import { Alert } from '@/components/core/Alert';
 import { Input } from '@/components/core/Input';
 import { Button } from '@/components/core/Button';
+import { AdminAuthService } from '@/lib/httpClient/adminAuth';
 
 export default function SigninPage() {
   const [formData, setFormData] = useState<SigninData>({
@@ -32,11 +33,11 @@ export default function SigninPage() {
   const validateForm = (): boolean => {
     const newErrors: Partial<SigninData> = {};
 
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+    // if (!formData.email) {
+    //   newErrors.email = 'Email is required';
+    // } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    //   newErrors.email = 'Please enter a valid email address';
+    // }
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -55,11 +56,11 @@ export default function SigninPage() {
     setAlert(null);
 
     try {
-      await AuthService.signin(formData);
+      await AdminAuthService.signin(formData);
       setAlert({ type: 'success', message: 'Sign in successful! Redirecting...' });
       
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/admin/dashboard');
       }, 1500);
     } catch (error) {
       setAlert({ 
