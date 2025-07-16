@@ -2,7 +2,7 @@ import { z } from "zod"
 
 export const serviceSchema = z.object({
   type: z.enum(["AMC", "URGENT"], { message: "Invalid service type" }),
-  scheduledDate: z.date(),
+  scheduledDate: z.coerce.date(),
   beforeImageUrl: z.string().url().optional(),
   afterImageUrl: z.string().url().optional(),
 })

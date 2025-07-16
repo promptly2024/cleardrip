@@ -60,7 +60,7 @@ export default function SigninPage() {
       setAlert({ type: 'success', message: 'Sign in successful! Redirecting...' });
       
       setTimeout(() => {
-        router.push('/admin/dashboard');
+        window.location.href = '/admin/dashboard';
       }, 1500);
     } catch (error) {
       setAlert({ 

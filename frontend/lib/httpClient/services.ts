@@ -1,10 +1,37 @@
-import { Service, ServicesResponse } from "../types/services";
+import { BookServiceForm, Service, ServicesResponse } from "../types/services";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export class ServicesClass {
-    static async bookService(){
+    // Book Service by User 
+    static async bookService(data: BookServiceForm): Promise<BookServiceForm>{
+        try {
+            const response = await fetch(`${API_BASE_URL}/services/book`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    type: data.type,
+                    scheduledDate: data.scheduledDate,
+                    beforeImageUrl: data.beforeImageUrl || undefined,
+                    afterImageUrl: data.afterImageUrl || undefined
+                }),
+            });
 
+            const result = await response.json();
+
+            if(!response.ok){
+                throw new Error(result.error || 'Cannot create Service');
+            }
+
+            return result;
+        }
+        catch(error){
+            console.log('Error creating services: ' + error);
+            throw error; 
+        }
     }
 
     // GetAllServices 

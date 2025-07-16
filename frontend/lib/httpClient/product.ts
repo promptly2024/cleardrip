@@ -1,8 +1,9 @@
-import { Product, ProductsResponse } from "../types/products";
+import { Product, ProductInput, ProductsResponse } from "../types/products";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export class ProductsClass {
+
     static async getAllProducts(page: number, limit: number): Promise<ProductsResponse> {
         try {
             const response = await fetch(`${API_BASE_URL}/products?page=${page}&limit=${limit}`, {
@@ -58,13 +59,77 @@ export class ProductsClass {
 
     }
 
-    static async createProduct() {
+    static async createProduct(data: ProductInput): Promise<Product> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/product`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
 
+            const result = await response.json();
+
+            if(!response.ok){
+                throw new Error(result.error || 'Failed to create product');
+            }
+
+            return result;
+        }
+        catch(error){
+            console.error('Error creating product:', error);
+            throw error;
+        }
     }
-    static async updateProduct(){
 
+    static async updateProduct(id: string, data: Partial<ProductInput>): Promise<Product>{
+        try {
+            const response = await fetch(`${API_BASE_URL}/product/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `Failed to update product with id: ${id}`);
+            }
+
+            return result.product || result;
+        }   
+        catch (error) {
+            console.error('Error updating product:', error);
+            throw error;
+        }
     }
-    static async deleteProduct(){
 
+    static async deleteProduct(id: string):Promise<{ message: string; product: Product }>{
+        try {
+            const response = await fetch(`${API_BASE_URL}/product/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+            });
+
+            const result = await response.json();
+
+            if(!response.ok){
+                throw new Error(result.error || `Failed to delete product with id ${id}`);
+            }
+
+            return result;
+        }
+        catch(error){
+            console.error('Error deleting product:', error);
+            throw error;
+        }
     }
 }

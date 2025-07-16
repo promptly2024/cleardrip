@@ -15,3 +15,12 @@ export interface ProductsResponse {
     limit: number;
     totalPage: number;
 }
+
+export interface ProductInput {
+    name: string;
+    price: string;
+    description: string;
+    inventory: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+}

@@ -217,7 +217,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
                     </div>
                 </div>
 
-                {(service.beforeImageUrl || service.afterImageUrl) && (
+                {/* {(service.beforeImageUrl || service.afterImageUrl) && (
                     <>
                     <Separator />
                     <div>
@@ -255,7 +255,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
                         </div>
                     </div>
                     </>
-                )}
+                )} */}
                 </CardContent>
             </Card>
             </div>

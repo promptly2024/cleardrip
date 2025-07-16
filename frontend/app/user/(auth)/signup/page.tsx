@@ -119,7 +119,7 @@ export default function SignupPage() {
       setAlert({ type: 'success', message: 'Account created successfully! Redirecting...' });
       
       setTimeout(() => {
-        router.push('/dashboard');
+        window.location.href = '/user/dashboard';
       }, 1500);
     } catch (error) {
       setAlert({ 

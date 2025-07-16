@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             const data = await response.json();
             console.log("Auth context response ", data);
-
+            
             if(!response.ok){
                 throw new Error(data?.error || "Not Authenticated");
             }
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     logoutUrl = `${API_BACKEND_URL}/auth/admin/logout`;
                     break;
                 case 'USER':
-                    logoutUrl = `${API_BACKEND_URL}/user/logout`;
+                    logoutUrl = `${API_BACKEND_URL}/auth/signout`;
                     break;
                 default: 
                     console.warn('No role found, skipping logout API Call');

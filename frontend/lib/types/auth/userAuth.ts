@@ -34,11 +34,3 @@ export interface AuthResponse {
     };
   };
 }
-
-export interface ErrorResponse {
-  error: string;
-  issues?: Array<{
-    path: string[];
-    message: string;
-  }>;
-}
