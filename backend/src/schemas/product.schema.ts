@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+/* --------------------------- PRODUCT SCHEMAS --------------------------- */
+
 export const productSchema = z.object({
     name: z.string().min(1, { message: "Product name is required" }),
     price: z.number().min(0, { message: "Price must be a positive number" }),
@@ -8,6 +10,7 @@ export const productSchema = z.object({
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),
 })
-
 export type ProductInput = z.infer<typeof productSchema>
-export const productUpdateSchema = productSchema.partial();
+
+export const productUpdateSchema = productSchema.partial()
+export type ProductUpdateInput = z.infer<typeof productUpdateSchema>
