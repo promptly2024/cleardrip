@@ -18,7 +18,10 @@ export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyRepl
     }
     try {
         const service = await createService(body.data, userId);
-        return reply.code(201).send(service);
+        return reply.code(201).send({
+            message: "Service booked successfully",
+            service
+        });
     } catch (error) {
         return sendError(reply, 500, "Failed to book service", error);
     }
@@ -36,7 +39,10 @@ export const GetServiceByIdHandler = async (req: FastifyRequest, reply: FastifyR
         if (!service) {
             return sendError(reply, 404, "Service not found", "No service found with the provided ID");
         }
-        return reply.send(service);
+        return reply.send({
+            message: "Service retrieved successfully",
+            service
+        });
     } catch (error) {
         return sendError(reply, 500, "Failed to retrieve service", error);
     }
@@ -85,7 +91,10 @@ export const UpdateStatusHandler = async (req: FastifyRequest, reply: FastifyRep
     const { status } = parsed.data;
     try {
         const updatedService = await updateStatus(id, status, isAdminUser ? undefined : userId);
-        return reply.send(updatedService);
+        return reply.send({
+            message: "Service status updated successfully",
+            service: updatedService
+        });
     } catch (error) {
         return sendError(reply, 500, "Failed to update service status", error);
     }
@@ -100,7 +109,10 @@ export const DeleteServiceHandler = async (req: FastifyRequest, reply: FastifyRe
     }
     try {
         const deletedService = await updateStatus(id, "CANCELLED", isAdminUser ? undefined : userId);
-        return reply.send(deletedService);
+        return reply.send({
+            message: "Service deleted successfully",
+            service: deletedService
+        });
     } catch (error) {
         return sendError(reply, 422, "Failed to delete service", error);
     }

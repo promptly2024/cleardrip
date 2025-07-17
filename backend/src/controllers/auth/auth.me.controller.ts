@@ -6,7 +6,8 @@ import { logger } from "@/lib/logger"
 export const meHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
         const user = req.user
-        if (!user) {
+        if (!user || !user.email) {
+            logger.error("\n\nUnauthorized access attempt", { user })
             return reply.code(401).send({ error: "Unauthorized" })
         }
         const existingUser = await findUserByEmailOrPhone(user.email, user.role)
