@@ -13,6 +13,9 @@ export async function findUserByEmailOrPhone(email?: string, phone?: string, rol
                     { email: email },
                     { phone: phone }
                 ]
+            },
+            include: {
+                address:true,
             }
         })
     }
