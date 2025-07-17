@@ -10,7 +10,7 @@ export const meHandler = async (req: FastifyRequest, reply: FastifyReply) => {
             logger.error("\n\nUnauthorized access attempt", { user })
             return reply.code(401).send({ error: "Unauthorized" })
         }
-        const existingUser = await findUserByEmailOrPhone(user.email, user.role)
+        const existingUser = await findUserByEmailOrPhone(user.email, undefined, user.role)
         if (!existingUser) {
             return reply.code(404).send({ error: "User not found" })
         }

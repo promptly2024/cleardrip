@@ -60,37 +60,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <Droplets className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Watercare
-              </span>
-            </Link>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="#home" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Home</Link>
-              <Link href="#about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">About</Link>
-              <Link href="#services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Services</Link>
-              <Link href="#products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Products</Link>
-              <Link href="#contact" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Contact</Link>
-            </nav>
-            <div className="flex space-x-4">
-              <Link href="/user/signin" className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors">
-                Login
-              </Link>
-              <Link href="/user/signup" className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105">
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section id="home" className="relative py-20 overflow-hidden">
         <div className="container mx-auto px-4">
@@ -147,32 +116,6 @@ export default function Home() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-3xl blur-xl opacity-20 transform scale-105"></div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="about" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Watercare?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Experience the future of water health monitoring with our comprehensive platform designed to keep your family safe and your water pure.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                <div className="mb-6">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>

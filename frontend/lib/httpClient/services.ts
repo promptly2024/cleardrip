@@ -64,7 +64,7 @@ export class ServicesClass {
     }
 
     // GetServicesById
-    static async getServicesById(id: string): Promise<Service>{
+    static async getServicesById(id: string): Promise<{ message: string, service: Service }>{
         try {
             const response = await fetch(`${API_BASE_URL}/services/${id}`, {
                 method: 'GET',

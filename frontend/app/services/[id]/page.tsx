@@ -42,7 +42,8 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
     const fetchService = async () => {
         try {
             const result = await ServicesClass.getServicesById(id as string);
-            setService(result);
+            console.log(result);
+            setService(result.service);
         } 
         catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
@@ -108,6 +109,9 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
     };
 
     const canDeleteService = () => {
+        if (!service) return false;
+        if (service.status === 'COMPLETED') return false;
+
         if (isAdmin || isSuperAdmin) return true;
         return isUser && user?.id;
     };
