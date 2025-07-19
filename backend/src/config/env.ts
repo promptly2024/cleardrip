@@ -19,3 +19,16 @@ export const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
 export const REDIS_URL = process.env.REDIS_URL || (() => {
     throw new Error("REDIS_URL not set in environment variables");
 })();
+
+
+export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || (() => {
+    throw new Error("CLOUDINARY_CLOUD_NAME not set in environment variables");
+})();
+
+export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || (() => {
+    throw new Error("CLOUDINARY_API_KEY not set in environment variables");
+})();
+
+export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || (() => {
+    throw new Error("CLOUDINARY_API_SECRET not set in environment variables");
+})();

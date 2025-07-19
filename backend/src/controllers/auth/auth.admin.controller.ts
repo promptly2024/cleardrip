@@ -21,8 +21,9 @@ export const AdminSignInHandler = async (req: FastifyRequest, reply: FastifyRepl
         if (!isPasswordValid) {
             return sendError(reply, 401, "Invalid password", "The provided password is incorrect");
         }
-        const token = generateToken({ userId: admin.id, email: admin.email, role: "ADMIN" });
-        setAuthCookie(reply, token, "ADMIN");
+        const role = admin.role === "STAFF" ? "ADMIN" : "SUPER_ADMIN";
+        const token = generateToken({ userId: admin.id, email: admin.email, role });
+        setAuthCookie(reply, token, role);
         return reply.code(200).send({ message: "Admin signed in successfully" });
     } catch (error) {
         return sendError(reply, 500, "Failed to sign in admin", error);

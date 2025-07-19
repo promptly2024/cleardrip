@@ -39,7 +39,7 @@ export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) =>
 export const signinHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
         const body = signinSchema.parse(req.body)
-        const user = await findUserByEmailOrPhone(body.email)
+        const user = await findUserByEmailOrPhone(body.email,undefined, "USER");
         if (!user) {
             return reply.code(404).send({ error: "Invalid credentials" })
         }

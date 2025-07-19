@@ -10,6 +10,7 @@ export function setAuthCookie(reply: FastifyReply, token: string, role: 'USER' |
     } else if (role === 'SUPER_ADMIN') {
         cookieName = 'super_admin_token'
     }
+    removeAuthCookie(reply);
     reply.setCookie(cookieName, token, {
         httpOnly: true,
         secure: NODE_ENV === 'production',

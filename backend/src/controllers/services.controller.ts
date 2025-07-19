@@ -5,27 +5,52 @@ import { createService, deleteService, getAllServices, getServiceById, getTotalS
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
+import { uploadToCloudinary } from "@/utils/uploadToClaudinary";
+import { parseMultipartData } from "@/utils/parseMultipartData";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
-    const body = serviceSchema.safeParse(req.body);
-
     const userId = req.user?.userId;
+    console.log(`\n\nReq.User : ${JSON.stringify(req.user)}\n\n`);
     if (!userId) {
         return sendError(reply, 401, "Unauthorized", "User ID is required");
     }
-    if (!body.success) {
-        return sendError(reply, 400, "Validation failed", body.error.issues);
-    }
+
     try {
-        const service = await createService(body.data, userId);
+        const { files, fields } = await parseMultipartData(req);
+
+        if (files.length > 1) return sendError(reply, 400, "Only one file is allowed", "Invalid request");
+
+        const parsed = serviceSchema.safeParse(fields);
+        if (!parsed.success) {
+            return sendError(reply, 400, "Validation failed", parsed.error.issues);
+        }
+        let uploaded;
+        if (!(files.length === 0)) {
+            console.log("Creating service without image...");
+            uploaded = await uploadToCloudinary({
+                files,
+                folder: "service_images",
+                filenamePrefix: `service_${userId}`,
+            });
+            console.log("Uploaded to Claudinary...");
+        } else console.log("Creating service without image...");
+
+        const serviceData = {
+            ...parsed.data,
+            beforeImageUrl: uploaded && uploaded[0].url,
+        };
+
+        const service = await createService(serviceData, userId);
+
         return reply.code(201).send({
             message: "Service booked successfully",
             service
         });
     } catch (error) {
+        console.error("Service booking failed:", error);
         return sendError(reply, 500, "Failed to book service", error);
     }
-}
+};
 
 export const GetServiceByIdHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };

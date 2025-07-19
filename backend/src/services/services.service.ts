@@ -2,12 +2,11 @@ import { prisma } from "lib/prisma";
 import { ServiceInput } from "@/schemas/services.schema";
 
 export const createService = async (data: ServiceInput, userId: string) => {
-    // In case of urgent service, default time can be after 30 minutes - 2 hours from now, can be pass from frontend.
     const service = await prisma.service.create({
         data: {
             ...data,
             user: {
-                connect: { id: userId }, // Associate the service with the user
+                connect: { id: userId },
             },
         },
     });
