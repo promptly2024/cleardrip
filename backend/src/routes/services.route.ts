@@ -6,6 +6,6 @@ export default async function servicesRoutes(fastify: FastifyInstance) {
     fastify.post("/services/book", { preHandler: requireRole(["USER"]) }, BookServiceHandler)
     fastify.get("/services", { preHandler: requireRole(["USER", "ADMIN", "SUPER_ADMIN"]) }, GetAllServicesHandler)
     fastify.get("/services/:id", { preHandler: requireRole(["USER", "ADMIN", "SUPER_ADMIN"]) }, GetServiceByIdHandler)
-    fastify.put("/api/services/:id/status", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, UpdateStatusHandler)
+    fastify.put("/services/:id/status", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, UpdateStatusHandler)
     fastify.delete("/services/:id", { preHandler: requireRole(["USER", "ADMIN", "SUPER_ADMIN"]) }, DeleteServiceHandler)
 }

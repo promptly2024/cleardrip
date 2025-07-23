@@ -17,16 +17,3 @@ export const createSubscription = async (userId: string, planType: string) => {
         }
     })
 }
-/*
-model Subscription {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String
-  planType     String // e.g. "Monthly", "Annual", etc.
-  startDate    DateTime
-  endDate      DateTime
-  loyaltyBadge String? // optional display badge
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-*/
