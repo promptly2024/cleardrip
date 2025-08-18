@@ -1,6 +1,5 @@
 "use client";
-
-import { Droplets, User, LogOut } from "lucide-react";
+import { User, LogOut, Search, ShoppingCart, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 export default function Header() {
   const { authenticated, user, role, logout } = useAuth();
@@ -21,26 +21,45 @@ export default function Header() {
 
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+      <div className="container ml-[70px] px-4 py-4">
+        <div className="flex items-center justify-evenly">
           {/* Logo and Branding */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-              <Droplets className="w-6 h-6 text-white" />
+            <div>
+              <Image src="/cleardrip-logo.png" alt="Clear Drip Logo" width={82} height={105.66}/>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              ClearDrip 
-            </span>
           </Link>
 
           {/* Main Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <Link href="/" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Home</Link>
-            <Link href="/about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">About</Link>
-            <Link href="/services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Services</Link>
-            <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Products</Link>
-            <Link href="/contact" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Contact</Link>
+          <nav className="hidden md:flex space-x-[24px]">
+            <Link href="/" className="text-[#0E0E0E] h3 transition-colors">Home</Link>
+            <Link href="/about" className="text-[#0E0E0E] h3 transition-colors">Products</Link>
+            <Link href="/services" className="text-[#0E0E0E] h3 transition-colors">Services</Link>
+            <Link href="/products" className="text-[#0E0E0E] h3 transition-colors">Pricing</Link>
+            <Link href="/contact" className="text-[#0E0E0E] h3 transition-colors">Contact</Link>
           </nav>
+
+          {/* Search */}
+          <div className="flex items-center bg-white h-[56px] w-[400px] rounded-[16px] border-solid border-[#626161] border-[0.2px] px-[16px]">
+            {/* Search Icon */}
+            <Search className="w-[24px] h-[24px] mr-[12px]" strokeWidth={2} />
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search for services…. "
+              className="flex-1 h3 bg-transparent border-none outline-none h3"
+              style={{ fontSize: "24px", lineHeight: "36px", fontWeight: 500 }}
+            />
+          </div>
+
+          {/* Cart Icon */}
+          <button className="w-[24px] h-[24px] flex items-center justify-center hover:bg-blue-100 rounded transition">
+            <ShoppingCart className="w-[24px] h-[24px]" strokeWidth={2} />
+          </button>
+          {/* Grid Icon */}
+          <button className="w-[24px] h-[24px] flex items-center justify-center hover:bg-blue-100 rounded transition">
+            <LayoutGrid className="w-[24px] h-[24px" strokeWidth={2} />
+          </button>
 
           {/* User Section */}
           <div className="flex space-x-4">
@@ -87,11 +106,8 @@ export default function Header() {
               </DropdownMenu>
             ) : (
               <>
-                <Link href="/user/signin" className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors">
-                  Login
-                </Link>
-                <Link href="/user/signup" className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105">
-                  Get Started
+                <Link href="/user/signup" className="px-6 py-2 border border-[#0E0E0E] border-solid rounded-[16px] w-[174px] h-[50px] flex items-center justify-center text-[24px] leading-[31px] text-[#0E0E0E] text-center font-medium">
+                  Sign Up
                 </Link>
               </>
             )}

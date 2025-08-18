@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/layout/Footer';
+import { TdsAlert } from '@/components/core/TdsAlert';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
+  const [showAlert, setShowAlert] = useState(true);
 
   const features = [
     {
@@ -60,6 +62,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
+      {showAlert && <TdsAlert onClose={() => setShowAlert(false)} />}
       {/* Hero Section */}
       <section id="home" className="relative py-20 overflow-hidden">
         <div className="container mx-auto px-4">
