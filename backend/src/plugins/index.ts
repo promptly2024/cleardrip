@@ -10,5 +10,5 @@ export default async function registerPlugins(app: FastifyInstance) {
     await cookiePlugin(app)
     await formbodyPlugin(app)
     await swaggerPlugin(app)
-    await redisPlugin(app)
+    // await redisPlugin(app)
 }
