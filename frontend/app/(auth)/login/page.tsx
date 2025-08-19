@@ -104,7 +104,6 @@ function LoginFormFields() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
-        // Simulate login
         setTimeout(() => setIsLoading(false), 2000)
     }
 
