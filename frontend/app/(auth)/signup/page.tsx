@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export default function SignupPage() {
     return (
@@ -106,11 +107,13 @@ function SignupFormFields() {
         e.preventDefault()
         setIsLoading(true)
         // Simulate signup
+        toast.success("Dummy signup successful!")
         setTimeout(() => setIsLoading(false), 2000)
     }
 
     const handleGoogleSignup = () => {
         // Handle Google signup
+        toast.success("Google signup successful!")
         console.log("Google signup clicked")
     }
 
