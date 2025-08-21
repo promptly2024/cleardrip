@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 
 import { useState } from "react"
@@ -132,9 +131,9 @@ export default function ContactPage() {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                  disabled={!formData.name || !formData.email || !formData.message}
+                  disabled={!formData.name || !formData.email || !formData.message || isSubmitting}
                 >
-                  Send Message
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
 
                 <p className="text-center text-gray-500 text-sm">We respond within 24 hours</p>
