@@ -6,6 +6,7 @@ export interface UserType {
     name: string;
     email: string;
     role: Role;
+    avatar: string;
     adminRole?: AdminRole;
     loyaltyStatus: string;
     // [key: string]: any;
@@ -17,7 +18,7 @@ export interface AuthState {
     adminRole: AdminRole;
     user: UserType | null;
     authLoading: boolean;
-    refetch : () => void;
+    refetch: () => void;
     isSuperAdmin: boolean;
     isAdmin: boolean;
     isUser: boolean;

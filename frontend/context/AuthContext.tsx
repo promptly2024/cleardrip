@@ -1,6 +1,7 @@
 "use client"
 
 import { AuthState } from "@/lib/types/auth/auth"
+import { APIURL } from "@/utils/env";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react"
 
 const AuthContext = createContext<AuthState> ({
@@ -15,8 +16,6 @@ const AuthContext = createContext<AuthState> ({
     isUser: false,
     logout: async () => { }
 });
-
-const API_BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<Omit<AuthState, 'refetch' | 'isAdmin' | 'isUser' | 'logout'>> ({
@@ -35,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }));
 
         try {
-            const response = await fetch(`${API_BACKEND_URL}/auth/me`, {
+            const response = await fetch(`${APIURL}/auth/me`, {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -81,13 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             switch (state.role) {
                 case 'ADMIN':
-                    logoutUrl = `${API_BACKEND_URL}/auth/admin/logout`;
+                    logoutUrl = `${APIURL}/auth/admin/logout`;
                     break;
                 case 'SUPER_ADMIN':
-                    logoutUrl = `${API_BACKEND_URL}/auth/admin/logout`;
+                    logoutUrl = `${APIURL}/auth/admin/logout`;
                     break;
                 case 'USER':
-                    logoutUrl = `${API_BACKEND_URL}/auth/signout`;
+                    logoutUrl = `${APIURL}/auth/signout`;
                     break;
                 default: 
                     console.warn('No role found, skipping logout API Call');

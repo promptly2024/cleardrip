@@ -18,7 +18,7 @@ declare module "fastify" {
 export function requireRole(allowedRoles: Role[]) {
     return async function (req: FastifyRequest, reply: FastifyReply) {
         const token = req.cookies?.admin_token || req.cookies?.user_token
-        console.log(`\n\nReq.Cookies : ${JSON.stringify(req.cookies)}\n\n`);
+        // console.log(`\n\nReq.Cookies : ${JSON.stringify(req.cookies)}\n\n`);
         if (!token) {
             return reply.code(401).send({ error: "You must be logged in to access this resource." })
         }

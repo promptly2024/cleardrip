@@ -9,6 +9,7 @@ import tdsRoutes from './routes/tds.route'
 import notificationRoute from './routes/notification.route'
 import './workers/notification.worker'
 import subscriptionRoutes from './routes/subscription.route'
+import contactUsRoutes from './routes/contactus.route'
 
 export const buildApp = async (): Promise<FastifyInstance> => {
     const app = Fastify({ logger: true })
@@ -21,6 +22,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     app.register(tdsRoutes, { prefix: '/api' })
     app.register(notificationRoute, { prefix: '/api' })
     app.register(subscriptionRoutes, { prefix: '/api' })
+    app.register(contactUsRoutes, { prefix: '/api' })
 
     return app
 }
