@@ -8,6 +8,8 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ProfileComponent from '@/components/dashboard/profile';
+import SettingsPage from '@/components/dashboard/settings';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -58,9 +60,9 @@ const WaterCareDashboard = () => {
       case 'alerts':
         return <Card><CardHeader><CardTitle>Alerts</CardTitle></CardHeader><CardContent><p>Active alerts and notifications.</p></CardContent></Card>;
       case 'profile':
-        return <Card><CardHeader><CardTitle>Profile</CardTitle></CardHeader><CardContent><p>Name: {user?.name}</p><p>Email: {user?.email}</p></CardContent></Card>;
+        return <ProfileComponent />
       case 'settings':
-        return <Card><CardHeader><CardTitle>Settings</CardTitle></CardHeader><CardContent><p>Manage your account settings.</p></CardContent></Card>;
+        return <SettingsPage />
       default:
         return null;
     }

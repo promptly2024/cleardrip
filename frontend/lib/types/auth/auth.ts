@@ -10,6 +10,18 @@ export interface UserType {
     adminRole?: AdminRole;
     loyaltyStatus: string;
     // [key: string]: any;
+    phone?: string; // Add this
+    address?: AddressType; // Add this
+    profileImage?: string; // Add this if you're using it
+}
+
+export interface AddressType {
+  id: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
 }
 
 export interface AuthState {

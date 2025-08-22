@@ -49,8 +49,8 @@ export class AuthService {
   }
 
   static async updateProfile(data: Partial<SignupData>): Promise<{ message: string; user: any }> {
-    const response = await fetch(`${API_BASE_URL}/user/update-profile`, {
-      method: 'PUT',
+    const response = await fetch(`${API_BASE_URL}/auth/update-profile`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
