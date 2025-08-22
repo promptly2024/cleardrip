@@ -138,7 +138,7 @@ export default function SignupPage() {
           <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
           <CardDescription className="text-center">
             Already have an account?{' '}
-            <Link href="/auth/signin" className="text-primary hover:underline">
+            <Link href="/user/signin" className="text-blue-600 hover:underline">
               Sign in
             </Link>
           </CardDescription>
