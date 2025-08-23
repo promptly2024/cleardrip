@@ -155,11 +155,12 @@ export default function ServiceBookingPage({ params }: { params: { id: string } 
       setBookingLoading(true);
 
       const formData = new FormData();
-      formData.append("slotId", selectedSlot.id);
-      formData.append("serviceId", service.id);
       if (imageFile) {
         formData.append("beforeImage", imageFile);
       }
+      formData.append("slotId", selectedSlot.id);
+      formData.append("serviceId", service.id);
+      
 
       const response = await fetch(`${APIURL}/services/book`, {
         method: 'POST',
