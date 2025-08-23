@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useCart } from '@/context/CartContext';
 
 interface NavLinkProps {
     href: string;
@@ -37,6 +38,7 @@ const Navbar: React.FC = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const router = useRouter();
+    const { cartCount } = useCart();
 
     const handleSearchQuery = () => {
         router.push(`/search?query=${searchQuery}`);
@@ -143,10 +145,16 @@ const Navbar: React.FC = () => {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="p-2"
+                            className="p-2 relative"
+                            onClick={() => router.push('/cart')}
                             aria-label="Shopping cart"
                         >
                             <ShoppingCart className="w-5 h-5 text-gray-600" />
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                                    {cartCount > 99 ? '99+' : cartCount}
+                                </span>
+                            )}
                         </Button>
 
                         <Button
@@ -367,10 +375,16 @@ const Navbar: React.FC = () => {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="p-2"
+                                        className="p-2 relative"
+                                        onClick={() => router.push('/cart')}
                                         aria-label="Shopping cart"
                                     >
                                         <ShoppingCart className="w-5 h-5 text-gray-600" />
+                                        {cartCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium text-[10px]">
+                                                {cartCount > 9 ? '9+' : cartCount}
+                                            </span>
+                                        )}
                                     </Button>
 
                                     <Button

@@ -5,6 +5,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { ShoppingCart, Eye, AlertCircle, RefreshCw, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
 
 const SAMPLE_IMAGES = [
     "/featured1.png",
@@ -167,6 +169,9 @@ export default function FeaturedProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { addToCart } = useCart();
+    const router = useRouter();
+
 
     const loadProducts = useCallback(async () => {
         try {
@@ -186,17 +191,32 @@ export default function FeaturedProducts() {
     }, []);
 
     const handleAddToCart = useCallback((productId: string) => {
-        const productName = products.find(product => product.id === productId)?.name || "Product";
-        toast.success(`Added product ${productName} to cart`, {
+        const product = products.find(product => product.id === productId);
+        if (!product) return;
+
+        addToCart({
+            id: product.id,
+            name: product.name,
+            price: typeof product.price === "number" ? product.price : parseFloat(product.price),
+            originalPrice: typeof product.price === "number" ? product.price : parseFloat(product.price),
+            // discount: product.discount,
+            image: product.image,
+            // rating: product.rating,
+            // reviewCount: product.reviewCount,
+        });
+
+        toast.success(`Added ${product.name} to cart`, {
             description: "You can view your cart to proceed with the purchase.",
             action: {
                 label: "View Cart",
                 onClick: () => {
-                    toast.info("This feature is not implemented yet.");
+                    router.push('/cart');
                 }
             }
         });
-    }, []);
+    }, [addToCart, products, router]);
+
+
 
     const handleBuyNow = useCallback((productId: string) => {
         const productName = products.find(product => product.id === productId)?.name || "Product";

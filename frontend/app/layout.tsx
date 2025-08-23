@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "../context/AuthContext";
 import "./globals.css";
-import Header from "@/components/layout/Header";
 import { Toaster } from "sonner";
 import Navbar from "@/components/homepage/navbar";
+import { CartProvider } from "@/context/CartContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,9 +36,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           {/* <Header /> */}
-          <Navbar />
-          <Toaster />
-          {children}
+          <CartProvider >
+            <Navbar />
+            <Toaster />
+            {children}
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
