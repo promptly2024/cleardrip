@@ -15,7 +15,7 @@ interface HeroImageProps {
 
 const AlertBanner: React.FC<AlertBannerProps> = ({ onClose }) => {
     return (
-        <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 px-4 sm:px-6 py-3 shadow-sm z-50 relative">
+        <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200 px-4 sm:px-6 py-3 shadow-sm z-10 relative">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center flex-shrink-0">

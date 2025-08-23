@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfileComponent from '@/components/dashboard/profile';
 import SettingsPage from '@/components/dashboard/settings';
 import MyServices from '@/components/dashboard/MyServices';
+import { OverviewTab } from '@/components/dashboard/OverviewTab';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -45,16 +46,7 @@ const WaterCareDashboard = () => {
   const renderView = () => {
     switch (view) {
       case 'overview':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Welcome, {user?.name || 'User'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Your water usage summary and alerts will appear here.</p>
-            </CardContent>
-          </Card>
-        );
+        return <OverviewTab />
       case 'services':
         return <MyServices />
       case 'tds':

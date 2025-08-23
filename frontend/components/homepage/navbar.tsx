@@ -191,7 +191,7 @@ const Navbar: React.FC = () => {
                                         )}
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuContent align="end" className="w-56 bg-white">
                                     <div className="px-3 py-2 text-sm text-gray-800">
                                         <div className="font-semibold">{getUserDisplayName()}</div>
                                         <div className="text-xs text-gray-500 truncate">{user?.email}</div>
