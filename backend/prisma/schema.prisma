@@ -26,7 +26,7 @@ model User {
 
   loyaltyStatus LoyaltyStatus? @default(BRONZE)
   otpSessions   OTPSession[]
-  services      Service[]
+  bookings        ServiceBooking[]
   subscriptions Subscription[]
   tdsLogs       TDSLog[]
   notifications Notification[]
@@ -61,6 +61,7 @@ model Admin {
   role      AdminRole @default(STAFF)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  services  ServiceDefinition[]
 }
 
 enum AdminRole {
@@ -78,17 +79,54 @@ model Product {
   updatedAt   DateTime @updatedAt
 }
 
-model Service {
-  id             String        @id @default(uuid())
-  user           User          @relation(fields: [userId], references: [id])
-  userId         String
-  type           ServiceType
-  status         ServiceStatus @default(PENDING)
-  scheduledDate  DateTime
-  beforeImageUrl String? // Cloudinary URL
-  afterImageUrl  String? // Cloudinary URL
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+model ServiceDefinition {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  type        ServiceType
+  image       String? 
+  imageUrl    String?
+  price       Float?
+
+  duration    Int?
+  isActive    Boolean @default(true)
+
+  createdBy   Admin    @relation(fields: [adminId], references: [id])
+  adminId     String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings    ServiceBooking[]
+}
+
+model ServiceBooking {
+  id               String          @id @default(uuid())
+  user             User            @relation(fields: [userId], references: [id])
+  userId           String
+
+  service          ServiceDefinition @relation(fields: [serviceId], references: [id])
+  serviceId        String
+
+  slot             Slot            @relation(fields: [slotId], references: [id])
+  slotId           String
+
+  status           ServiceStatus   @default(PENDING)
+  beforeImageUrl   String?
+  afterImageUrl    String?
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Slot {
+  id         String           @id @default(uuid())
+  startTime  DateTime
+  endTime    DateTime
+  bookings   ServiceBooking[]
+
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 }
 
 enum ServiceType {

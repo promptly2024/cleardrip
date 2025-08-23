@@ -1,7 +1,7 @@
 import { FastifyRequest } from "fastify/types/request";
 import { FastifyReply } from "fastify/types/reply";
 import { serviceSchema, statusSchema } from "@/schemas/services.schema";
-import { createService, deleteService, getAllServices, getServiceById, getTotalServicesCount, updateService, updateStatus } from "@/services/services.service";
+import { bookService, deleteService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
@@ -10,37 +10,48 @@ import { parseMultipartData } from "@/utils/parseMultipartData";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = req.user?.userId;
-    console.log(`\n\nReq.User : ${JSON.stringify(req.user)}\n\n`);
+    // console.log(`\n\nReq.User : ${JSON.stringify(req.user)}\n\n`);
     if (!userId) {
         return sendError(reply, 401, "Unauthorized", "User ID is required");
     }
 
     try {
+        let serviceData
         const { files, fields } = await parseMultipartData(req);
+        if (files.length > 0) {
+            console.log(`Received ${files.length} files.`);
+            if (files.length > 1) return sendError(reply, 400, "Only one file is allowed", "Invalid request");
 
-        if (files.length > 1) return sendError(reply, 400, "Only one file is allowed", "Invalid request");
-
-        const parsed = serviceSchema.safeParse(fields);
-        if (!parsed.success) {
-            return sendError(reply, 400, "Validation failed", parsed.error.issues);
+            const parsed = serviceSchema.safeParse(fields);
+            if (!parsed.success) {
+                return sendError(reply, 400, "Validation failed", parsed.error.issues);
+            }
+            let uploaded;
+            if (!(files.length === 0)) {
+                console.log("Uploading to Claudinary...");
+                uploaded = await uploadToCloudinary({
+                    files,
+                    folder: "service_images",
+                    filenamePrefix: `service_${userId}`,
+                });
+                console.log("Uploaded to Claudinary...");
+            } else console.log("Creating service without image...");
+            serviceData = {
+                ...parsed.data,
+                beforeImageUrl: uploaded && uploaded[0].url,
+            };
+            console.log(`Image Uploaded: ${uploaded && uploaded[0].url}`);
+        } else {
+            const parsed = serviceSchema.safeParse(fields);
+            if (!parsed.success) {
+                return sendError(reply, 400, "Validation failed", parsed.error.issues);
+            }
+            serviceData = parsed.data;
+            console.log("No files uploaded, proceeding without image...");
         }
-        let uploaded;
-        if (!(files.length === 0)) {
-            console.log("Creating service without image...");
-            uploaded = await uploadToCloudinary({
-                files,
-                folder: "service_images",
-                filenamePrefix: `service_${userId}`,
-            });
-            console.log("Uploaded to Claudinary...");
-        } else console.log("Creating service without image...");
+        console.log("Service data to be booked:", serviceData);
 
-        const serviceData = {
-            ...parsed.data,
-            beforeImageUrl: uploaded && uploaded[0].url,
-        };
-
-        const service = await createService(serviceData, userId);
+        const service = await bookService(serviceData, userId);
 
         return reply.code(201).send({
             message: "Service booked successfully",
@@ -60,16 +71,30 @@ export const GetServiceByIdHandler = async (req: FastifyRequest, reply: FastifyR
         return sendError(reply, 400, "Service ID is required", "Invalid request");
     }
     try {
-        const service = await getServiceById(id, isAdminUser ? undefined : userId);
+        const service = await getServiceById(id, isAdminUser);
         if (!service) {
-            return sendError(reply, 404, "Service not found", "No service found with the provided ID");
+            return sendError(reply, 404, "Service not found", `No service found with the provided ID: ${id}\nUser ID: ${userId}\nAdmin User: ${isAdminUser}`);
         }
         return reply.send({
             message: "Service retrieved successfully",
             service
         });
     } catch (error) {
+        console.error("Failed to retrieve service:", error);
         return sendError(reply, 500, "Failed to retrieve service", error);
+    }
+}
+
+export const GetServiceSlotsAvailableHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const slots = await getServiceSlotsAvailable();
+        return reply.send({
+            message: "Available slots retrieved successfully",
+            slots
+        });
+    } catch (error) {
+        console.error("Failed to retrieve service slots:", error);
+        return sendError(reply, 500, "Failed to retrieve service slots", error);
     }
 }
 
@@ -80,6 +105,7 @@ export const GetAllServicesHandler = async (req: FastifyRequest, reply: FastifyR
     if (!userId) {
         return sendError(reply, 401, "Unauthorized", "User ID is required");
     }
+    console.log(`\n\nFetching all services for user: ${userId}\n\n`);
     try {
         let services, totalServices;
         if (isAdminUser) {
@@ -99,8 +125,10 @@ export const GetAllServicesHandler = async (req: FastifyRequest, reply: FastifyR
                 hasNext: skip + take < totalServices,
             }
         });
-    } catch (error) {
-        return sendError(reply, 500, "Failed to retrieve services", error);
+    } catch (error: any) {
+        console.error("Failed to retrieve services:", error);
+        // return sendError(reply, 500, error.message, "Failed to retrieve services");
+        return sendError(reply, 500, "API Error", "API Error");
     }
 }
 

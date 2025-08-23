@@ -107,7 +107,7 @@ export default function ServicesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => router.push('/services/book')}>
+          <Button onClick={() => router.push(`/services/${1}/book`)}>
             <Plus className="w-4 h-4 mr-2" />
             Book New Service
           </Button>

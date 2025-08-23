@@ -12,7 +12,7 @@ async function main() {
     await prisma.notification.deleteMany();
     await prisma.tDSLog.deleteMany();
     await prisma.subscription.deleteMany();
-    await prisma.service.deleteMany();
+    await prisma.serviceDefinition.deleteMany();
     await prisma.oTPSession.deleteMany();
     await prisma.user.deleteMany();
     await prisma.address.deleteMany();
@@ -21,7 +21,7 @@ async function main() {
 
     // Hash passwords
     const userPassword = await bcrypt.hash('12345678', 10);
-    const adminPassword = await bcrypt.hash('123456', 10);
+    const adminPassword = await bcrypt.hash('12345678', 10);
 
     // Create addresses
     const addresses = await Promise.all([
@@ -121,7 +121,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Super Admin',
-                email: 'superadmin@gmail.com',
+                email: '1@1',
                 password: adminPassword,
                 role: 'SUPERADMIN'
             }
@@ -129,7 +129,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Staff Admin',
-                email: 'staffadmin@gmail.com',
+                email: '2@2',
                 password: adminPassword,
                 role: 'STAFF'
             }
@@ -180,52 +180,145 @@ async function main() {
         })
     ]);
 
-    // Create services
-    const services = await Promise.all([
-        prisma.service.create({
+    console.log(`Creating Service Definitions By Admin`);
+    const serviceDefinitions = await Promise.all([
+        prisma.serviceDefinition.create({
             data: {
-                userId: users[0].id,
+                name: 'Water Purification',
+                description: 'Comprehensive water purification service',
+                price: 1500.00,
+                duration: 120,
+                adminId: admins[0].id,
                 type: 'AMC',
-                status: 'COMPLETED',
-                scheduledDate: new Date('2024-12-01T10:00:00'),
-                beforeImageUrl: 'https://cloudinary.com/sample-before-1.jpg',
-                afterImageUrl: 'https://cloudinary.com/sample-after-1.jpg'
+                image: 'https://cloudinary.com/sample-service-1.jpg',
+                isActive: true
             }
         }),
-        prisma.service.create({
+        prisma.serviceDefinition.create({
             data: {
-                userId: users[1].id,
+                name: 'RO System Installation',
+                description: 'Installation of reverse osmosis water purification systems',
+                price: 3000.00,
+                duration: 180,
+                adminId: admins[0].id,
                 type: 'URGENT',
-                status: 'IN_PROGRESS',
-                scheduledDate: new Date('2024-12-15T14:30:00'),
-                beforeImageUrl: 'https://cloudinary.com/sample-before-2.jpg'
+                image: 'https://www.thespruce.com/thmb/qnLXdzgIGZPAUE5Bhw2OF-8u67s=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/installing-a-reverse-osmosis-system-2718849-08-9339294fdfb54895898ae3a1aa3d3913.jpg',
+                isActive: true
             }
         }),
-        prisma.service.create({
+        prisma.serviceDefinition.create({
             data: {
-                userId: users[2].id,
+                name: 'Annual Maintenance Contract',
+                description: 'Yearly maintenance contract for water purification systems',
+                price: 5000.00,
+                duration: 365,
+                adminId: admins[1].id,
                 type: 'AMC',
-                status: 'SCHEDULED',
-                scheduledDate: new Date('2024-12-20T09:00:00')
-            }
-        }),
-        prisma.service.create({
-            data: {
-                userId: users[0].id,
-                type: 'URGENT',
-                status: 'PENDING',
-                scheduledDate: new Date('2024-12-18T16:00:00')
-            }
-        }),
-        prisma.service.create({
-            data: {
-                userId: users[3].id,
-                type: 'AMC',
-                status: 'CANCELLED',
-                scheduledDate: new Date('2024-12-10T11:00:00')
+                image: 'https://cloudinary.com/sample-service-3.jpg',
+                isActive: true
             }
         })
     ]);
+    console.log('Created service definitions:', serviceDefinitions.length);
+
+    // Create ServiceBookings along with slots by the User
+    console.log(`Creating Service Bookings`);
+    const slots = await Promise.all([
+        // Slot 1 with one service
+        prisma.slot.create({
+            data: {
+                startTime: new Date('2024-12-01T10:00:00'),
+                endTime: new Date('2024-12-01T11:00:00'),
+                bookings: {
+                    create: {
+                        userId: users[0].id,
+                        serviceId: serviceDefinitions[0].id,
+                        beforeImageUrl: 'https://cloudinary.com/sample-before-1.jpg',
+                        afterImageUrl: 'https://cloudinary.com/sample-after-1.jpg',
+                        status: 'IN_PROGRESS',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    },
+                },
+            },
+            include: { bookings: true },
+        }),
+
+        // Slot 2 with one service
+        prisma.slot.create({
+            data: {
+                startTime: new Date('2024-12-15T14:30:00'),
+                endTime: new Date('2024-12-15T15:30:00'),
+                bookings: {
+                    create: {
+                        userId: users[1].id,
+                        serviceId: serviceDefinitions[1].id,
+                        beforeImageUrl: 'https://cloudinary.com/sample-before-2.jpg',
+                        afterImageUrl: 'https://cloudinary.com/sample-after-2.jpg',
+                        status: 'IN_PROGRESS',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    },
+                },
+            },
+            include: { bookings: true },
+        }),
+
+        // Slot 3 with one service
+        prisma.slot.create({
+            data: {
+                startTime: new Date('2024-12-20T09:00:00'),
+                endTime: new Date('2024-12-20T10:00:00'),
+                bookings: {
+                    create: {
+                        userId: users[2].id,
+                        serviceId: serviceDefinitions[2].id,
+                        status: 'SCHEDULED',
+                    },
+                },
+            },
+            include: { bookings: true },
+        }),
+
+        // Slot 4 with one service
+        prisma.slot.create({
+            data: {
+                startTime: new Date('2024-12-18T16:00:00'),
+                endTime: new Date('2024-12-18T17:00:00'),
+                bookings: {
+                    create: {
+                        userId: users[0].id,
+                        serviceId: serviceDefinitions[0].id,
+                        status: 'PENDING',
+                    },
+                },
+            },
+            include: { bookings: true },
+        }),
+
+        // Slot 5 with one service
+        prisma.slot.create({
+            data: {
+                startTime: new Date('2024-12-10T11:00:00'),
+                endTime: new Date('2024-12-10T12:00:00'),
+                bookings: {
+                    create: {
+                        userId: users[3].id,
+                        serviceId: serviceDefinitions[1].id,
+                        beforeImageUrl: 'https://cloudinary.com/sample-before-3.jpg',
+                        afterImageUrl: 'https://cloudinary.com/sample-after-3.jpg',
+                        status: 'COMPLETED',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    },
+                },
+            },
+            include: { bookings: true },
+        }),
+    ]);
+
+    console.log('Seeded slots with services:', slots);
+
 
     // Create subscriptions
     const subscriptions = await Promise.all([
@@ -441,7 +534,7 @@ async function main() {
     console.log(`Created ${users.length} users`);
     console.log(`Created ${admins.length} admins`);
     console.log(`Created ${products.length} products`);
-    console.log(`Created ${services.length} services`);
+    // console.log(`Created ${services.length} services`);
     console.log(`Created ${subscriptions.length} subscriptions`);
     console.log(`Created ${tdsLogs.length} TDS logs`);
     console.log(`Created ${notifications.length} notifications`);

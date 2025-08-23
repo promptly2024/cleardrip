@@ -1,39 +1,59 @@
 import { prisma } from "lib/prisma";
 import { ServiceInput } from "@/schemas/services.schema";
 
-export const createService = async (data: ServiceInput, userId: string) => {
-    const service = await prisma.service.create({
+export const bookService = async (data: ServiceInput, userId: string) => {
+    const service = await prisma.serviceBooking.create({
         data: {
             ...data,
-            user: {
-                connect: { id: userId },
-            },
+            userId,
         },
     });
     return service;
 };
 
-export const getServiceById = async (id: string, userId?: string) => {
-    // If userId is provided, filter service by user, else allow admin to access any service
-    const service = await prisma.service.findFirst({
-        where: userId ? { id, userId } : { id },
+export const getServiceSlotsAvailable = async () => {
+    const currentDateTime = new Date();
+    // Get all future slots including their bookings count
+    const slots = await prisma.slot.findMany({
+        where: {
+            // startTime: { gte: currentDateTime },
+        },
         include: {
-            user: true, // Include user details if needed
+            bookings: true, // include bookings to count them
+        },
+        orderBy: { startTime: "asc" },
+    });
+
+    // Filter slots with less than 1 bookings
+    const availableSlots = slots.filter(slot => slot.bookings.length < 1);
+
+    return availableSlots;
+};
+
+export const getServiceById = async (id: string, isAdmin: boolean) => {
+    // if admin user, include all bookings, else include only slot and status
+    const Bookings = isAdmin ? {
+        include: {
+            slot: true,
+            status: true
+        }
+    } : {
+        select: {
+            slot: true,
+            status: true
+        }
+    };
+    const service = await prisma.serviceDefinition.findFirst({
+        include: {
+            bookings: Bookings
         },
     });
     return service;
 };
 
-export const updateService = async (id: string, data: Partial<ServiceInput>) => {
-    const service = await prisma.service.update({
-        where: { id },
-        data,
-    });
-    return service;
-};
-
+// currently not in use (in future soft delete may introduce)
 export const deleteService = async (id: string, userId?: string) => {
-    const service = await prisma.service.findFirst({
+    const service = await prisma.serviceBooking.findFirst({
         where: {
             id,
             userId,
@@ -44,19 +64,20 @@ export const deleteService = async (id: string, userId?: string) => {
         throw new Error("Service not found or you don't have permission to delete it.");
     }
 
-    await prisma.service.delete({
+    await prisma.serviceBooking.delete({
         where: { id },
     });
 };
 
 export const getAllServices = async (take: number, skip: number, userId?: string) => {
     // If userId is provided, filter services by user
-    const services = await prisma.service.findMany({
+    const services = await prisma.serviceBooking.findMany({
         where: userId ? { userId } : {},
         take,
         skip,
         include: {
             user: true,
+            slot: true,
         },
         orderBy: {
             createdAt: "desc",
@@ -66,7 +87,7 @@ export const getAllServices = async (take: number, skip: number, userId?: string
 };
 
 export const getTotalServicesCount = async (userId?: string) => {
-    const count = await prisma.service.count({
+    const count = await prisma.serviceBooking.count({
         where: userId ? { userId } : {},
     });
     return count;
@@ -86,7 +107,7 @@ export const updateStatus = async (serviceId: string, status: string, userId?: s
         throw new Error(`Invalid status: ${status}`);
     }
 
-    const service = await prisma.service.findFirst({
+    const service = await prisma.serviceBooking.findFirst({
         where: {
             id: serviceId,
             ...(userId && { userId }),
@@ -97,7 +118,7 @@ export const updateStatus = async (serviceId: string, status: string, userId?: s
         throw new Error("Service not found or permission denied.");
     }
 
-    const updatedService = await prisma.service.update({
+    const updatedService = await prisma.serviceBooking.update({
         where: { id: serviceId },
         data: { status: upperStatus as ServiceStatus },
     });
