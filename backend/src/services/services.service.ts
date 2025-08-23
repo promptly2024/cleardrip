@@ -72,6 +72,7 @@ export const deleteService = async (id: string, userId?: string) => {
 
 export const getAllServices = async (take: number, skip: number, userId?: string) => {
     // If userId is provided, filter services by user
+    console.log(`Take: ${take}, Skip: ${skip}`);
     const services = await prisma.serviceBooking.findMany({
         where: userId ? { userId } : {},
         take,
@@ -79,6 +80,7 @@ export const getAllServices = async (take: number, skip: number, userId?: string
         include: {
             user: true,
             slot: true,
+            service: true,
         },
         orderBy: {
             createdAt: "desc",

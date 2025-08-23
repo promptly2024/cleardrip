@@ -5,24 +5,62 @@ export interface BookServiceForm {
   afterImageUrl?: string;
 }
 
-export interface Service {
+interface Services {
   id: string;
-  type: 'AMC' | 'URGENT';
-  scheduledDate: string;
+  userId: string;
+  serviceId: string;
+  slotId: string;
   status: string;
-  beforeImageUrl?: string;
-  afterImageUrl?: string;
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ServicesResponse {
-  message: string;
-  services: Service[];
-  pagination: {
-    take: number;
-    skip: number;
-    total: number;
-    hasNext: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    addressId: string;
+    password: string;
+    fcmToken: string | null;
+    whatsappNumber: string | null;
+    isEmailVerified: boolean;
+    isPhoneVerified: boolean;
+    loyaltyStatus: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  slot: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    description: string;
+    type: string;
+    image: string;
+    imageUrl: string | null;
+    price: number;
+    duration: number;
+    isActive: boolean;
+    adminId: string;
+    createdAt: string;
+    updatedAt: string;
   };
 }
+interface Pagination {
+  take: number;
+  skip: number;
+  total: number;
+  hasNext: boolean;
+}
+interface ServicesResponse {
+  services: Services[];
+  pagination: Pagination;
+  message: string;
+}
+export type { Services, Pagination, ServicesResponse };

@@ -1,5 +1,5 @@
 import { APIURL } from "@/utils/env";
-import { BookServiceForm, Service, ServicesResponse } from "../types/services";
+import { BookServiceForm, Services, ServicesResponse } from "../types/services";
 import { toast } from "sonner";
 
 export class ServicesClass {
@@ -35,9 +35,9 @@ export class ServicesClass {
     }
 
     // GetAllServices 
-    static async getAllServices(page: number, skip: number): Promise<ServicesResponse> {
+    static async getAllServices(page: number, limit: number): Promise<ServicesResponse> {
         try {
-            const response = await fetch(`${APIURL}/services?take=${page}&skip=${skip}`, {
+            const response = await fetch(`${APIURL}/services?page=${page}&limit=${limit}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -59,7 +59,6 @@ export class ServicesClass {
                 });
                 throw new Error(result.error || 'Cannot fetch all services');
             }
-            toast.success('Services fetched successfully');
 
             return {
                 services: result.services || result,
@@ -74,7 +73,7 @@ export class ServicesClass {
     }
 
     // GetServicesById
-    static async getServicesById(id: string): Promise<{ message: string, service: Service }> {
+    static async getServicesById(id: string): Promise<{ message: string, service: Services }> {
         try {
             const response = await fetch(`${APIURL}/services/${id}`, {
                 method: 'GET',
@@ -99,7 +98,7 @@ export class ServicesClass {
     }
 
     // UpdateServiceStatus (can only done by admin, superadmin)
-    static async updateServiceStatus(id: string, status: string): Promise<Service> {
+    static async updateServiceStatus(id: string, status: string): Promise<Services> {
         try {
             const response = await fetch(`${APIURL}/services/${id}/status`, {
                 method: 'PUT',
