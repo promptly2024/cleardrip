@@ -1,6 +1,7 @@
-// context/CartContext.tsx - Simplified version
+// context/CartContext.tsx - User-specific version
 "use client";
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 export interface CartItem {
     id: string;
@@ -38,23 +39,65 @@ export const useCart = () => {
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const { user, authenticated, authLoading } = useAuth();
 
-    // Load cart from localStorage on component mount
+    // Generate user-specific cart key
+    const getCartKey = useCallback(() => {
+        if (!authenticated || !user) {
+            return 'cart_guest'; // For non-authenticated users
+        }
+        // Use user ID if available, otherwise use email as fallback
+        const userIdentifier = user.id || user.email;
+        return `cart_${userIdentifier}`;
+    }, [authenticated, user]);
+
+    // Load cart from localStorage when user changes or component mounts
     useEffect(() => {
-        const savedCart = localStorage.getItem('cart');
+        // Don't load cart while auth is still loading
+        if (authLoading) return;
+
+        const cartKey = getCartKey();
+        const savedCart = localStorage.getItem(cartKey);
+        
         if (savedCart) {
             try {
-                setCartItems(JSON.parse(savedCart));
+                const parsedCart = JSON.parse(savedCart);
+                // Validate that parsed cart is an array
+                if (Array.isArray(parsedCart)) {
+                    setCartItems(parsedCart);
+                } else {
+                    console.warn('Invalid cart data found, resetting cart');
+                    setCartItems([]);
+                }
             } catch (error) {
                 console.error('Failed to parse saved cart:', error);
+                setCartItems([]);
             }
+        } else {
+            // No saved cart found, start with empty cart
+            setCartItems([]);
         }
-    }, []);
+    }, [getCartKey, authLoading]);
+
+    // Clear cart when user logs out
+    useEffect(() => {
+        if (!authLoading && !authenticated) {
+            setCartItems([]);
+        }
+    }, [authenticated, authLoading]);
 
     // Save cart to localStorage whenever cartItems changes
     useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cartItems));
-    }, [cartItems]);
+        // Don't save while auth is loading
+        if (authLoading) return;
+
+        const cartKey = getCartKey();
+        try {
+            localStorage.setItem(cartKey, JSON.stringify(cartItems));
+        } catch (error) {
+            console.error('Failed to save cart to localStorage:', error);
+        }
+    }, [cartItems, getCartKey, authLoading]);
 
     const addToCart = useCallback((item: Omit<CartItem, 'quantity'>) => {
         setCartItems(prevItems => {

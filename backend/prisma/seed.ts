@@ -143,7 +143,8 @@ async function main() {
                 name: 'Water Purifier Filter',
                 price: 1200.00,
                 description: 'High-quality replacement filter for water purifiers',
-                inventory: 50
+                inventory: 50,
+                image: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=400&fit=crop&crop=center"
             }
         }),
         prisma.product.create({
@@ -151,7 +152,8 @@ async function main() {
                 name: 'UV Lamp',
                 price: 800.00,
                 description: 'UV sterilization lamp for water purification',
-                inventory: 30
+                inventory: 30,
+                image: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=400&h=400&fit=crop&crop=center"
             }
         }),
         prisma.product.create({
@@ -159,7 +161,8 @@ async function main() {
                 name: 'Membrane Cartridge',
                 price: 2500.00,
                 description: 'RO membrane cartridge for reverse osmosis systems',
-                inventory: 25
+                inventory: 25,
+                image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop&crop=center"
             }
         }),
         prisma.product.create({
@@ -167,7 +170,8 @@ async function main() {
                 name: 'Pre-filter Set',
                 price: 600.00,
                 description: 'Set of 3 pre-filters for water purification system',
-                inventory: 40
+                inventory: 40,
+                image: "https://images.unsplash.com/photo-1563298723-dcfebaa392e3?w=400&h=400&fit=crop&crop=center"
             }
         }),
         prisma.product.create({
@@ -175,7 +179,8 @@ async function main() {
                 name: 'Storage Tank',
                 price: 3500.00,
                 description: '10L storage tank for purified water',
-                inventory: 15
+                inventory: 15,
+                image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop&crop=center"
             }
         })
     ]);
