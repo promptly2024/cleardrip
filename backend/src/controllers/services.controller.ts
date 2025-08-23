@@ -1,7 +1,7 @@
 import { FastifyRequest } from "fastify/types/request";
 import { FastifyReply } from "fastify/types/reply";
 import { serviceSchema, statusSchema } from "@/schemas/services.schema";
-import { bookService, deleteService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
+import { bookService, deleteService, getAllPublicService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
@@ -129,6 +129,20 @@ export const GetAllServicesHandler = async (req: FastifyRequest, reply: FastifyR
         console.error("Failed to retrieve services:", error);
         // return sendError(reply, 500, error.message, "Failed to retrieve services");
         return sendError(reply, 500, "API Error", "API Error");
+    }
+}
+
+export const getAllPublicServices = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { take, skip } = parsePagination(req.query);
+        const services = await getAllPublicService(take, skip);
+        return reply.send({
+            message: "Public services retrieved successfully",
+            services
+        });
+    } catch (error) {
+        console.error("Failed to retrieve public services:", error);
+        return sendError(reply, 500, "Failed to retrieve public services", error);
     }
 }
 

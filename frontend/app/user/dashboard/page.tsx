@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfileComponent from '@/components/dashboard/profile';
 import SettingsPage from '@/components/dashboard/settings';
+import MyServices from '@/components/dashboard/MyServices';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
+  { id: 'services', label: 'My Services', icon: FileText },
   { id: 'tds', label: 'Water TDS', icon: Droplet },
   { id: 'bills', label: 'Billing', icon: FileText },
   { id: 'alerts', label: 'Alerts', icon: Bell },
@@ -53,6 +55,8 @@ const WaterCareDashboard = () => {
             </CardContent>
           </Card>
         );
+      case 'services':
+        return <MyServices />
       case 'tds':
         return <Card><CardHeader><CardTitle>Water TDS</CardTitle></CardHeader><CardContent><p>Live water TDS .</p></CardContent></Card>;
       case 'bills':

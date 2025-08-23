@@ -44,6 +44,7 @@ export const getServiceById = async (id: string, isAdmin: boolean) => {
         }
     };
     const service = await prisma.serviceDefinition.findFirst({
+        where: { isActive: true, id },
         include: {
             bookings: Bookings
         },
@@ -124,4 +125,13 @@ export const updateStatus = async (serviceId: string, status: string, userId?: s
     });
 
     return updatedService;
+};
+
+export const getAllPublicService = async (take: number, skip: number) => {
+    const services = await prisma.serviceDefinition.findMany({
+        where: { isActive: true },
+        take,
+        skip
+    });
+    return services;
 };

@@ -77,7 +77,6 @@ export default function ServiceBookingPage({ params }: { params: { id: string } 
   const fetchServiceData = async () => {
     try {
       setLoading(true);
-      toast.info(`Id is: ${params.id}`)
       const response = await fetch(`${APIURL}/services/${params.id}`, {
         method: 'GET',
         headers: {
