@@ -74,6 +74,7 @@ model Product {
   name        String
   price       Float
   description String?
+  image       String?
   inventory   Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -84,8 +85,7 @@ model ServiceDefinition {
   name        String
   description String?
   type        ServiceType
-  image       String? 
-  imageUrl    String?
+  image       String?
   price       Float?
 
   duration    Int?
