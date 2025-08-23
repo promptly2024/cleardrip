@@ -54,6 +54,7 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = React.useState<SortBy>("name")
   const [viewMode, setViewMode] = React.useState<ViewMode>("grid")
   const [showFilters, setShowFilters] = React.useState<boolean>(false)
+  const [rating, setRating] = React.useState<number>(4.5)
   const router = useRouter()
 
   const fetchServices = async () => {
@@ -171,8 +172,8 @@ export default function ServicesPage() {
         <div className="absolute top-4 left-4">
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${service.isActive
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
               }`}
           >
             {service.isActive ? "Available" : "Unavailable"}
@@ -182,7 +183,7 @@ export default function ServicesPage() {
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-1">
             <div className="flex items-center space-x-1 px-2 py-1">
               <Star className="w-3 h-3 text-yellow-400 fill-current" />
-              <span className="text-xs font-medium">4.8</span>
+              <span className="text-xs font-medium">{rating}</span>
             </div>
           </div>
         )}
@@ -447,8 +448,8 @@ export default function ServicesPage() {
           {/* Services Grid/List */}
           {!loading && !error && filteredServices.length > 0 && (
             <div className={`${viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'
-                : 'space-y-6'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'
+              : 'space-y-6'
               }`}>
               {filteredServices.map((service) => (
                 <ServiceCard key={service.id} service={service} />
