@@ -19,6 +19,8 @@ async function main() {
     await prisma.address.deleteMany();
     await prisma.admin.deleteMany();
     await prisma.product.deleteMany();
+    await prisma.subscription.deleteMany();
+    await prisma.subscriptionPlan.deleteMany();
 
     // Hash passwords
     const userPassword = await bcrypt.hash('12345678', 10);
@@ -280,8 +282,8 @@ async function main() {
         // Slot 1 with one service
         prisma.slot.create({
             data: {
-                startTime: new Date('2024-12-01T10:00:00'),
-                endTime: new Date('2024-12-01T11:00:00'),
+                startTime: new Date('2025-08-27T10:04:00'),
+                endTime: new Date('2025-08-27T11:05:00'),
                 bookings: {
                     create: {
                         userId: users[0].id,
@@ -300,8 +302,8 @@ async function main() {
         // Slot 2 with one service
         prisma.slot.create({
             data: {
-                startTime: new Date('2024-12-15T14:30:00'),
-                endTime: new Date('2024-12-15T15:30:00'),
+                startTime: new Date('2025-08-27T14:30:00'),
+                endTime: new Date('2025-08-27T15:30:00'),
                 bookings: {
                     create: {
                         userId: users[1].id,
@@ -320,8 +322,8 @@ async function main() {
         // Slot 3 with one service
         prisma.slot.create({
             data: {
-                startTime: new Date('2024-12-20T09:00:00'),
-                endTime: new Date('2024-12-20T10:00:00'),
+                startTime: new Date('2025-08-28T10:04:00'),
+                endTime: new Date('2025-08-28T11:05:00'),
                 bookings: {
                     create: {
                         userId: users[2].id,
@@ -336,8 +338,8 @@ async function main() {
         // Slot 4 with one service
         prisma.slot.create({
             data: {
-                startTime: new Date('2024-12-18T16:00:00'),
-                endTime: new Date('2024-12-18T17:00:00'),
+                startTime: new Date('2025-09-18T16:15:00'),
+                endTime: new Date('2025-09-18T17:17:00'),
                 bookings: {
                     create: {
                         userId: users[0].id,
@@ -370,7 +372,7 @@ async function main() {
         }),
     ]);
 
-    console.log('Seeded slots with services:', slots);
+    console.log('Seeded slots with services:', slots.length);
 
 
     // Create subscriptions
