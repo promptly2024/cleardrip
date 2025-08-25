@@ -12,6 +12,7 @@ async function main() {
     await prisma.notification.deleteMany();
     await prisma.tDSLog.deleteMany();
     await prisma.subscription.deleteMany();
+    await prisma.serviceBooking.deleteMany();
     await prisma.serviceDefinition.deleteMany();
     await prisma.oTPSession.deleteMany();
     await prisma.user.deleteMany();
