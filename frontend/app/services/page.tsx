@@ -61,7 +61,7 @@ export default function ServicesPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${APIURL}/public/services?take=50&skip=0`, {
+      const response = await fetch(`${APIURL}/public/services?page=1&limit=50`, {
         headers: {
           "Content-Type": "application/json",
         },

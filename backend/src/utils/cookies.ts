@@ -26,4 +26,3 @@ export function removeAuthCookie(reply: FastifyReply) {
     reply.clearCookie('admin_token')
     reply.clearCookie('super_admin_token')
 }
-

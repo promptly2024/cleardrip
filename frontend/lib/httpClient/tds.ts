@@ -27,9 +27,9 @@ export class TdsClass {
     }
 
     // Get recent TDS logs for current user or admin (with pagination)
-    static async getRecentTDSLogs(take: number = 10, skip: number = 0): Promise<TDSLogsResponse> {
+    static async getRecentTDSLogs(page: number = 1, limit: number = 50): Promise<TDSLogsResponse> {
         try {
-            const response = await fetch(`${APIURL}/tds/recent?take=${take}&skip=${skip}`, {
+            const response = await fetch(`${APIURL}/tds/recent?page=${page}&limit=${limit}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
