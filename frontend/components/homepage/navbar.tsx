@@ -118,7 +118,7 @@ const Navbar: React.FC = () => {
                         <NavLink href="/">Home</NavLink>
                         <NavLink href="/products">Products</NavLink>
                         <NavLink href="/services">Services</NavLink>
-                        <NavLink href="/pricing">Pricing</NavLink>
+                        <NavLink href="/subscriptions">Subscriptions</NavLink>
                     </div>
 
                     {/* Desktop Right Section */}

@@ -4,7 +4,7 @@ import { AuthState } from "@/lib/types/auth/auth"
 import { APIURL } from "@/utils/env";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react"
 
-const AuthContext = createContext<AuthState> ({
+const AuthContext = createContext<AuthState>({
     authenticated: false,
     role: null,
     adminRole: null,
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthState> ({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [state, setState] = useState<Omit<AuthState, 'refetch' | 'isAdmin' | 'isUser' | 'logout'>> ({
+    const [state, setState] = useState<Omit<AuthState, 'refetch' | 'isAdmin' | 'isUser' | 'logout'>>({
         authenticated: false,
         role: null,
         adminRole: null,
@@ -48,13 +48,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             const role = data.role;
             const adminRole = data.user?.adminRole ?? null;
+            
+            // ✅ Debug log to see what we're working with
+            console.log("Role values:", { role, adminRole, userRole: data.user?.role });
+            
             setState({
                 authenticated: true,
                 role,
                 adminRole,
                 user: data.user,
                 authLoading: false,
-                isSuperAdmin: adminRole === "SUPER_ADMIN",
+                // ✅ Fix: Check multiple possible super admin indicators
+                isSuperAdmin: role === "SUPER_ADMIN" || data.user?.role === "SUPERADMIN" || adminRole === "SUPER_ADMIN",
             });
         }
         catch(error){ 
@@ -119,8 +124,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...state,
         refetch: fetchAuth,
         isUser: state.role === 'USER',
-        isAdmin: state.role === 'ADMIN',
-        isSuperAdmin: state.adminRole === 'SUPER_ADMIN',
+        // ✅ Fix: Check multiple admin role patterns
+        isAdmin: state.role === 'ADMIN' || state.role === 'SUPER_ADMIN' || state.adminRole === 'ADMIN',
+        // ✅ Fix: Check multiple super admin patterns
+        isSuperAdmin: state.role === 'SUPER_ADMIN' || state.adminRole === 'SUPER_ADMIN',
         logout,
     };
     
