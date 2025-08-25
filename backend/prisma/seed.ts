@@ -121,7 +121,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Super Admin',
-                email: '1@1',
+                email: 'superadmin@gmail.com',
                 password: adminPassword,
                 role: 'SUPERADMIN'
             }
@@ -129,7 +129,7 @@ async function main() {
         prisma.admin.create({
             data: {
                 name: 'Staff Admin',
-                email: '2@2',
+                email: 'staff@gmail.com',
                 password: adminPassword,
                 role: 'STAFF'
             }

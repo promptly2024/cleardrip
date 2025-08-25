@@ -186,7 +186,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                         {/* Product Info */}
                         <div className="space-y-6">
                             <div>
-                                <div className="flex items-center gap-2 mb-3">
+                                {/* <div className="flex items-center gap-2 mb-3">
                                     <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
                                         Featured
                                     </Badge>
@@ -196,7 +196,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                                         ))}
                                         <span className="text-sm text-gray-500 ml-1">(4.0) • 24 reviews</span>
                                     </div>
-                                </div>
+                                </div> */}
                                 
                                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
                                     {product.name}
@@ -298,7 +298,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                             <TabsList className="grid w-full grid-cols-3 bg-gray-100">
                                 <TabsTrigger value="description">Description</TabsTrigger>
                                 <TabsTrigger value="specifications">Specifications</TabsTrigger>
-                                <TabsTrigger value="reviews">Reviews (24)</TabsTrigger>
+                                <TabsTrigger value="reviews">Reviews</TabsTrigger>
                             </TabsList>
                             
                             <TabsContent value="description" className="mt-8">
