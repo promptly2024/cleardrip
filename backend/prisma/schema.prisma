@@ -142,16 +142,31 @@ enum ServiceStatus {
   CANCELLED
 }
 
+model SubscriptionPlan {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "Monthly", "Annual", "Premium"
+  description String?  // optional details about the plan
+  price       Float    // cost of the plan
+  duration    Int      // in days (e.g. 30 = monthly, 365 = yearly)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // A plan can be purchased by many users
+  subscriptions Subscription[]
+}
+
 model Subscription {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String
-  planType     String // e.g. "Monthly", "Annual", etc.
-  startDate    DateTime
-  endDate      DateTime
-  loyaltyBadge String? // optional display badge
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(uuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId         String
+
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model TDSLog {

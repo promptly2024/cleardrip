@@ -227,6 +227,53 @@ async function main() {
     ]);
     console.log('Created service definitions:', serviceDefinitions.length);
 
+    // Create default Subscription Plans
+    const subscriptionPlans = await Promise.all([
+        prisma.subscriptionPlan.create({
+            data: {
+                name: "Basic",
+                description: "Access to basic features",
+                price: 199,
+                duration: 30, // 30 days
+            },
+        }),
+        prisma.subscriptionPlan.create({
+            data: {
+                name: "Standard",
+                description: "Access to standard features",
+                price: 499,
+                duration: 90, // 3 months
+            },
+        }),
+        prisma.subscriptionPlan.create({
+            data: {
+                name: "Premium",
+                description: "Access to premium features",
+                price: 999,
+                duration: 180, // 6 months
+            },
+        }),
+        prisma.subscriptionPlan.create({
+            data: {
+                name: "Annual",
+                description: "Full access for 1 year",
+                price: 1999,
+                duration: 365, // 1 year
+            },
+        }),
+        prisma.subscriptionPlan.create({
+            data: {
+                name: "Lifetime",
+                description: "One-time payment for lifetime access",
+                price: 4999,
+                duration: 36500, // roughly 100 years as a placeholder
+            },
+        }),
+    ]);
+
+    console.log("Default subscription plans created:", subscriptionPlans.length);
+
+
     // Create ServiceBookings along with slots by the User
     console.log(`Creating Service Bookings`);
     const slots = await Promise.all([
@@ -331,37 +378,32 @@ async function main() {
         prisma.subscription.create({
             data: {
                 userId: users[0].id,
-                planType: 'Annual',
+                planId: subscriptionPlans[0].id,
                 startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-12-31'),
-                loyaltyBadge: 'Gold Member'
+                endDate: new Date(new Date('2024-01-01').setDate(new Date('2024-01-01').getDate() + subscriptionPlans[0].duration))
             }
         }),
         prisma.subscription.create({
             data: {
                 userId: users[1].id,
-                planType: 'Monthly',
+                planId: subscriptionPlans[1].id,
                 startDate: new Date('2024-12-01'),
-                endDate: new Date('2025-01-01'),
-                loyaltyBadge: 'Silver Member'
+                endDate: new Date(new Date('2024-01-01').setDate(new Date('2024-01-01').getDate() + subscriptionPlans[1].duration))
             }
         }),
         prisma.subscription.create({
             data: {
                 userId: users[2].id,
-                planType: 'Annual',
+                planId: subscriptionPlans[2].id,
                 startDate: new Date('2024-06-01'),
-                endDate: new Date('2025-05-31'),
-                loyaltyBadge: 'Platinum Member'
+                endDate: new Date(new Date('2024-01-01').setDate(new Date('2024-01-01').getDate() + subscriptionPlans[2].duration))
             }
         }),
         prisma.subscription.create({
             data: {
-                userId: users[4].id,
-                planType: 'Quarterly',
+                userId: users[4].id, planId: subscriptionPlans[3].id,
                 startDate: new Date('2024-10-01'),
-                endDate: new Date('2025-01-01'),
-                loyaltyBadge: 'Gold Member'
+                endDate: new Date(new Date('2024-01-01').setDate(new Date('2024-01-01').getDate() + subscriptionPlans[3].duration))
             }
         })
     ]);

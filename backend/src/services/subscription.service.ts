@@ -2,18 +2,33 @@ import { prisma } from "@/lib/prisma"
 
 export const getSubscription = async (userId: string) => {
     return await prisma.subscription.findFirst({
-        where: { userId: userId }
+        where: { userId: userId },
+        include: { plan: true },
+        orderBy: { createdAt: "desc" },
     })
 }
 
 // Will Improve this later to handle different plans and durations
-export const createSubscription = async (userId: string, planType: string) => {
+export const createSubscription = async (userId: string, planId: string) => {
+    // Get the plan details
+    const plan = await prisma.subscriptionPlan.findUnique({
+        where: { id: planId }
+    });
+    if (!plan) {
+        throw new Error("Invalid subscription plan.");
+    }
     return await prisma.subscription.create({
         data: {
             userId: userId,
-            planType,
+            planId,
             startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            endDate: new Date(new Date().setDate(new Date().getDate() + plan.duration))
         }
     })
 }
+
+export const getAllSubscriptionsPlans = async () => {
+    return await prisma.subscriptionPlan.findMany({
+        orderBy: { price: "asc" },
+    });
+};

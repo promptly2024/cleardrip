@@ -1,7 +1,11 @@
 import { logger } from "@/lib/logger";
-import { createSubscription, getSubscription } from "@/services/subscription.service";
+import { createSubscription, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
 import { sendError } from "@/utils/errorResponse";
 import { FastifyReply, FastifyRequest } from "fastify";
+
+function isValidPlanId(planId: string): boolean {
+    return typeof planId === "string" && planId.trim().length > 0;
+}
 
 // View Current Subscription Plan
 export const GetCurrentSubscriptionPlanHandler = async (req: FastifyRequest, res: FastifyReply) => {
@@ -30,12 +34,16 @@ export const SubscribeToPlanHandler = async (req: FastifyRequest, res: FastifyRe
     if (!userId) {
         return sendError(res, 400, "Unauthorised request...");
     }
+    const { planId } = req.body as { planId: string };
+    if (!planId || !isValidPlanId(planId)) {
+        return sendError(res, 400, "Missing planId or duration.");
+    }
     try {
         const subscription = await getSubscription(userId);
         if (subscription) {
             return sendError(res, 400, "User already has an active subscription.");
         }
-        const newSubscription = await createSubscription(userId, "Monthly"); 
+        const newSubscription = await createSubscription(userId, planId);
         // Will improve this later to handle different plans and durations
         if (!newSubscription) {
             return sendError(res, 400, "Failed to create subscription.");
@@ -44,6 +52,23 @@ export const SubscribeToPlanHandler = async (req: FastifyRequest, res: FastifyRe
             message: "Subscription created successfully.",
             success: true,
             data: newSubscription,
+        });
+    } catch (error) {
+        logger.error(error);
+        return sendError(res, 500, "Internal server error.");
+    }
+}
+
+export const GetAllSubscriptionsDetailsHandler = async (req: FastifyRequest, res: FastifyReply) => {
+    try {
+        const subscriptions = await getAllSubscriptionsPlans();
+        if (!subscriptions) {
+            return sendError(res, 404, "No subscriptions found.");
+        }
+        return res.status(200).send({
+            message: "All subscriptions retrieved successfully.",
+            success: true,
+            data: subscriptions,
         });
     } catch (error) {
         logger.error(error);
