@@ -16,7 +16,7 @@ export const getServiceSlotsAvailable = async () => {
     // Get all future slots including their bookings count
     const slots = await prisma.slot.findMany({
         where: {
-            // startTime: { gte: currentDateTime },
+            startTime: { gte: currentDateTime },
         },
         include: {
             bookings: true, // include bookings to count them
