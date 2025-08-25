@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Star, Sparkles, Crown, Shield } from "lucide-react";
+import { ArrowRight, Check, Star, Crown, Shield, Sparkles } from "lucide-react";
 import { SubscriptionClass } from "@/lib/httpClient/subscription";
 
 // Icon assignment logic based on plan name
@@ -11,22 +11,19 @@ const iconMap: Record<string, React.ElementType> = {
   Standard: Star,
 };
 
-interface Plans {
+interface SubscriptionPlan {
   id: string;
   name: string;
-  price: string | number;
-  period: string;
-  description: string;
-  popular: boolean;
-  icon: React.ElementType;
-  features: string[];
-  savings: string | null;
-  buttonText: string;
-  buttonVariant: "outline" | "default";
+  price: number | string;
+  duration: string;
+  description?: string;
+  features?: string[];
+  savings?: string | null;
+  popular?: boolean;
 }
 
-export default function PricingSection() {
-  const [plans, setPlans] = useState<Plans[]>([]);
+export default function SubscriptionsSection() {
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,26 +34,23 @@ export default function PricingSection() {
       try {
         const response = await SubscriptionClass.getAllSubscriptions();
         if (response && response.success && response.data) {
-          // Transform API data to match Plans interface
-          const transformedPlans: Plans[] = response.data.map((plan: any) => ({
-            id: plan.id,
-            name: plan.name,
-            price: plan.price.toString(),
-            period: plan.duration,
-            description: plan.description || "Perfect for your needs",
-            popular: plan.popular || false,
-            icon: iconMap[plan.name] || Shield,
-            features: plan.features || [],
-            savings: plan.savings || null,
-            buttonText: plan.popular ? "Best Value" : "Get Started",
-            buttonVariant: plan.popular ? "default" : "outline"
-          }));
-          setPlans(transformedPlans);
+          setPlans(
+            response.data.map((plan: any) => ({
+              id: plan.id,
+              name: plan.name,
+              price: plan.price,
+              duration: plan.duration,
+              description: plan.description,
+              features: plan.features,
+              savings: plan.savings ?? null,
+              popular: plan.popular ?? false,
+            }))
+          );
         } else {
-          setError("Failed to load subscription plans.");
+          setError("Failed to load subscriptions.");
         }
       } catch (err) {
-        setError("Unexpected error occurred while fetching plans.");
+        setError("Unexpected error occurred while fetching subscriptions.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +73,7 @@ export default function PricingSection() {
         <div className="text-center mb-12 lg:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6" style={{ backgroundColor: 'var(--blue-100)', color: 'var(--blue-800)' }}>
             <Sparkles className="w-4 h-4" />
-            Simple Pricing
+            Available Subscriptions
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--blue-500)' }}>
             Choose your plan.
@@ -91,6 +85,7 @@ export default function PricingSection() {
           </p>
         </div>
 
+        {/* Main content */}
         <div className="flex flex-col xl:flex-row gap-8 lg:gap-12 items-stretch">
           {/* Promotional Card */}
           <div className="xl:w-1/3 order-3 xl:order-1">
@@ -137,18 +132,18 @@ export default function PricingSection() {
             </div>
           </div>
 
-          {/* Pricing Plans */}
+          {/* Plans Grid */}
           <div className="xl:w-7/12 order-1 xl:order-2">
             {loading ? (
-              <div className="text-center py-20 text-xl" style={{ color: 'var(--blue-600)' }}>Loading plans…</div>
+              <div className="text-center py-20 text-xl" style={{ color: 'var(--blue-600)' }}>Loading subscriptions…</div>
             ) : error ? (
               <div className="text-center py-20 text-xl text-red-600">{error}</div>
             ) : plans.length === 0 ? (
-              <div className="text-center py-20 text-xl" style={{ color: 'var(--blue-800)' }}>No plans found.</div>
+              <div className="text-center py-20 text-xl" style={{ color: 'var(--blue-800)' }}>No subscriptions found.</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                 {plans.map((plan, index) => {
-                  const IconComponent = plan.icon;
+                  const IconComponent = iconMap[plan.name] || Shield;
                   return (
                     <PricingCard
                       key={plan.id}
@@ -197,14 +192,14 @@ export default function PricingSection() {
   );
 }
 
-// Extracted PricingCard component
+// Pricing Card Component
 function PricingCard({ 
   plan, 
   IconComponent, 
   index, 
   onSubscribe 
 }: { 
-  plan: Plans; 
+  plan: SubscriptionPlan; 
   IconComponent: React.ElementType; 
   index: number; 
   onSubscribe: () => void;
@@ -214,7 +209,7 @@ function PricingCard({
       className={`relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 border-2 group ${
         plan.popular
           ? 'ring-4 scale-105 lg:scale-110'
-          : ''
+          : 'hover:border-blue-300'
       }`}
       style={{
         borderColor: plan.popular ? 'var(--blue-500)' : 'var(--white-400)',
@@ -257,24 +252,26 @@ function PricingCard({
       <div className="text-center mb-8">
         <div className="flex items-baseline justify-center gap-2 mb-2">
           <span className="text-3xl lg:text-4xl font-bold" style={{ color: 'var(--blue-900)' }}>₹{plan.price}</span>
-          <span className="text-lg" style={{ color: 'var(--blue-700)' }}>/ {plan.period}</span>
+          <span className="text-lg" style={{ color: 'var(--blue-700)' }}>/ {plan.duration}</span>
         </div>
-        {plan.period === "Lifetime" && (
+        {plan.duration === "Lifetime" && (
           <p className="text-sm text-green-600 font-medium">One-time payment</p>
         )}
       </div>
 
       {/* Features List */}
-      <ul className="space-y-4 mb-8">
-        {plan.features.map((feature, idx) => (
-          <li key={idx} className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0" style={{ backgroundColor: plan.popular ? 'var(--blue-100)' : 'var(--white-200)' }}>
-              <Check className="w-3 h-3" style={{ color: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }} />
-            </div>
-            <span className="leading-relaxed" style={{ color: 'var(--blue-900)' }}>{feature}</span>
-          </li>
-        ))}
-      </ul>
+      {plan.features && plan.features.length > 0 && (
+        <ul className="space-y-4 mb-8">
+          {plan.features.map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0" style={{ backgroundColor: plan.popular ? 'var(--blue-100)' : 'var(--white-200)' }}>
+                <Check className="w-3 h-3" style={{ color: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }} />
+              </div>
+              <span className="leading-relaxed" style={{ color: 'var(--blue-900)' }}>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* CTA Button */}
       <Button
@@ -282,14 +279,14 @@ function PricingCard({
         className="w-full py-6 text-lg font-semibold rounded-2xl transition-all duration-300 group text-white shadow-lg hover:shadow-xl"
         style={{ backgroundColor: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }}
       >
-        {plan.buttonText}
+        Subscribe
         <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
       </Button>
 
       {/* Value Proposition */}
       <div className="mt-6 text-center">
         <p className="text-sm" style={{ color: 'var(--blue-700)' }}>
-          {plan.period === "Lifetime" ? "Never worry about RO maintenance again" : "Cancel anytime, no questions asked"}
+          {plan.duration === "Lifetime" ? "Never worry about RO maintenance again" : "Cancel anytime, no questions asked"}
         </p>
       </div>
     </div>

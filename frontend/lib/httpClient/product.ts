@@ -113,9 +113,6 @@ export class ProductsClass {
         try {
             const response = await fetch(`${API_BASE_URL}/product/${id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 credentials: 'include',
             });
 

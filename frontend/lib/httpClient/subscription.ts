@@ -29,13 +29,14 @@ export class SubscriptionClass {
     }
   }
 
-  // Subscribe to a plan (default Monthly)
-  static async subscribeToPlan(): Promise<SubscriptionResponse> {
+  // Subscribe to a plan
+  static async subscribeToPlan(planId: string): Promise<SubscriptionResponse> {
     try {
       const response = await fetch(`${APIURL}/subscriptions/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ planId }),
       });
 
       const result = await response.json();
@@ -54,4 +55,58 @@ export class SubscriptionClass {
       throw error;
     }
   }
+
+  // Get all available subscription plans
+  static async getAllSubscriptions(): Promise<SubscriptionResponse> {
+    try {
+      const response = await fetch(`${APIURL}/subscriptions/all`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error("Failed to fetch subscription plans", {
+          description: result.message || "Cannot retrieve subscription plans",
+        });
+        throw new Error(result.message || "Cannot retrieve subscription plans");
+      }
+
+      toast.success("Subscription plans retrieved successfully");
+      return result;
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      throw error;
+    }
+  }
+
+  // Create a new subscription plan (Admin only)
+  static async createSubscriptionPlan(subscriptionData: any): Promise<SubscriptionResponse> {
+    try {
+      const response = await fetch(`${APIURL}/subscriptions/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(subscriptionData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error("Failed to create subscription plan", {
+          description: result.message || "Cannot create subscription plan",
+        });
+        throw new Error(result.message || "Cannot create subscription plan");
+      }
+
+      toast.success("Subscription plan created successfully");
+      return result;
+    } catch (error) {
+      console.error("Error creating subscription plan:", error);
+      throw error;
+    }
+  }
 }
+

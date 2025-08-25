@@ -5,7 +5,7 @@ import { z } from "zod"
 export const productSchema = z.object({
     name: z.string().min(1, { message: "Product name is required" }),
     price: z.number().min(0, { message: "Price must be a positive number" }),
-    images: z.array(z.string().url()).min(1, { message: "At least one image is required" }),
+    image: z.string().url().optional(),
     description: z.string().optional(),
     inventory: z.number().min(0, { message: "Inventory must be a non-negative integer" }),
     createdAt: z.date().optional(),
