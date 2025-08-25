@@ -1,5 +1,6 @@
 import { logger } from "@/lib/logger";
-import { createSubscription, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
+import { SubscriptionPlanSchema } from "@/schemas/subscriptionSchema";
+import { createSubscription, createSubscriptionPlans, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
 import { sendError } from "@/utils/errorResponse";
 import { FastifyReply, FastifyRequest } from "fastify";
 
@@ -69,6 +70,27 @@ export const GetAllSubscriptionsDetailsHandler = async (req: FastifyRequest, res
             message: "All subscriptions retrieved successfully.",
             success: true,
             data: subscriptions,
+        });
+    } catch (error) {
+        logger.error(error);
+        return sendError(res, 500, "Internal server error.");
+    }
+}
+
+export const CreateSubscriptionDetailsHandler = async (req: FastifyRequest, res: FastifyReply) => {
+    const validation = SubscriptionPlanSchema.safeParse(req.body);
+    if (!validation.success) {
+        return sendError(res, 400, "Invalid subscription plan data.");
+    }
+    try {
+        const newSubscription = await createSubscriptionPlans(validation.data);
+        if (!newSubscription) {
+            return sendError(res, 400, "Failed to create subscription.");
+        }
+        return res.status(201).send({
+            message: "Subscription created successfully.",
+            success: true,
+            data: newSubscription,
         });
     } catch (error) {
         logger.error(error);

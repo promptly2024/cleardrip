@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { SubscriptionPlanType } from "@/schemas/subscriptionSchema";
 
 export const getSubscription = async (userId: string) => {
     return await prisma.subscription.findFirst({
@@ -30,5 +31,16 @@ export const createSubscription = async (userId: string, planId: string) => {
 export const getAllSubscriptionsPlans = async () => {
     return await prisma.subscriptionPlan.findMany({
         orderBy: { price: "asc" },
+    });
+};
+
+export const createSubscriptionPlans = async (data: SubscriptionPlanType) => {
+    return await prisma.subscriptionPlan.create({
+        data: {
+            name: data.name,
+            price: data.price,
+            duration: data.duration,
+            description: data.description
+        }
     });
 };
