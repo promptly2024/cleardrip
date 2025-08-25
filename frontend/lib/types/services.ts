@@ -5,6 +5,20 @@ export interface BookServiceForm {
   afterImageUrl?: string;
 }
 
+interface ServiceDefinition {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  image: string;
+  imageUrl: string | null;
+  price: number;
+  duration: number;
+  isActive: boolean;
+  adminId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 interface Services {
   id: string;
   userId: string;
@@ -37,20 +51,7 @@ interface Services {
     createdAt: string;
     updatedAt: string;
   };
-  service: {
-    id: string;
-    name: string;
-    description: string;
-    type: string;
-    image: string;
-    imageUrl: string | null;
-    price: number;
-    duration: number;
-    isActive: boolean;
-    adminId: string;
-    createdAt: string;
-    updatedAt: string;
-  };
+  service: ServiceDefinition;
 }
 interface Pagination {
   take: number;
@@ -63,4 +64,4 @@ interface ServicesResponse {
   pagination: Pagination;
   message: string;
 }
-export type { Services, Pagination, ServicesResponse };
+export type { ServiceDefinition, Services, Pagination, ServicesResponse };

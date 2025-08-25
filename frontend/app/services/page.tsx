@@ -32,7 +32,6 @@ interface Service {
   description: string
   type: string
   image: string
-  imageUrl: string | null
   price: number
   duration: number
   isActive: boolean

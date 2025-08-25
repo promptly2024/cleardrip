@@ -1,5 +1,5 @@
 import { prisma } from "lib/prisma";
-import { ServiceInput } from "@/schemas/services.schema";
+import { ServiceDefinitionInput, ServiceInput, SlotInput } from "@/schemas/services.schema";
 
 export const bookService = async (data: ServiceInput, userId: string) => {
     const service = await prisma.serviceBooking.create({
@@ -136,4 +136,41 @@ export const getAllPublicService = async (take: number, skip: number) => {
         skip
     });
     return services;
+};
+
+export const addServiceDefinition = async (data: ServiceDefinitionInput, userId: string) => {
+    const service = await prisma.serviceDefinition.create({
+        data: {
+            ...data,
+            createdBy: { connect: { id: userId } },
+        },
+    });
+    return service;
+};
+
+export const addSlot = async (data: SlotInput, userId: string) => {
+    const slot = await prisma.slot.create({ data });
+    return slot;
+};
+
+export const deleteSlot = async (id: string) => {
+    const slot = await prisma.slot.findUnique({
+        where: { id },
+    });
+
+    if (!slot) {
+        throw new Error("Slot not found");
+    }
+    // transaction , if any bookings in this slots, then can not be delete
+    const bookings = await prisma.serviceBooking.findMany({
+        where: { slotId: id },
+    });
+    if (bookings.length > 0) {
+        throw new Error("Cannot delete slot with existing bookings");
+    }
+    await prisma.slot.delete({
+        where: { id },
+    });
+
+    return slot;
 };

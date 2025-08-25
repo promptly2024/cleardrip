@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Calendar, Clock, Image as ImageIcon, Edit, Trash2, Loader2, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { Service } from '@/lib/types/services';
+import { Services } from '@/lib/types/services';
 import { ServicesClass } from '@/lib/httpClient/services';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/core/Loader';
@@ -27,7 +27,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
     const { authenticated, authLoading, isUser, isAdmin, isSuperAdmin, user } = useAuth();
     const resolvedParams = use(params);
     const id = resolvedParams.id;
-    const [service, setService] = useState<Service | null>(null);
+    const [service, setService] = useState<Services | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [statusLoading, setStatusLoading] = useState(false);
@@ -183,7 +183,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
                                         Service #{service.id.slice(0, 8)}
                                     </CardTitle>
                                     <CardDescription>
-                                        {service.type} Service
+                                        {service.service.type} Service
                                     </CardDescription>
                                 </div>
                                 <Badge className={getStatusColor(service.status)}>
@@ -196,8 +196,8 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Service Type</label>
                                     <p className="mt-1">
-                                        <Badge variant={service.type === 'URGENT' ? 'destructive' : 'default'}>
-                                            {service.type}
+                                        <Badge variant={service.service.type === 'URGENT' ? 'destructive' : 'default'}>
+                                            {service.service.type}
                                         </Badge>
                                     </p>
                                 </div>
@@ -205,7 +205,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailPageProps) {
                                     <label className="text-sm font-medium text-gray-600">Scheduled Date</label>
                                     <p className="mt-1 flex items-center gap-2">
                                         <Clock className="w-4 h-4" />
-                                        {formatDate(service.scheduledDate)}
+                                        {formatDate(service.slot.startTime)}~{formatDate(service.slot.endTime)}
                                     </p>
                                 </div>
                             </div>

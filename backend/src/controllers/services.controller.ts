@@ -1,7 +1,7 @@
 import { FastifyRequest } from "fastify/types/request";
 import { FastifyReply } from "fastify/types/reply";
-import { serviceSchema, statusSchema } from "@/schemas/services.schema";
-import { bookService, deleteService, getAllPublicService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
+import { serviceDefinitionSchema, serviceSchema, slotSchema, statusSchema } from "@/schemas/services.schema";
+import { addServiceDefinition, addSlot, bookService, deleteService, deleteSlot, getAllPublicService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
@@ -182,5 +182,78 @@ export const DeleteServiceHandler = async (req: FastifyRequest, reply: FastifyRe
         });
     } catch (error) {
         return sendError(reply, 422, "Failed to delete service", error);
+    }
+}
+
+export const AddServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const parsed = serviceDefinitionSchema.safeParse(req.body);
+    const userId = req.user?.userId;
+    const isAdminUser = isAdmin(req.user?.role);
+    if (!parsed.success) {
+        return sendError(reply, 400, "Invalid service data", "Invalid request");
+    }
+    const serviceData = parsed.data;
+    try {
+        if (!userId || !isAdminUser) {
+            return sendError(reply, 403, "Forbidden", "You do not have permission to add a service");
+        }
+        const newService = await addServiceDefinition(serviceData, userId);
+        return reply.send({
+            message: "Service added successfully",
+            service: newService
+        });
+    } catch (error) {
+        return sendError(reply, 500, "Failed to add service", error);
+    }
+}
+
+export const AddSlotHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const parsed = slotSchema.safeParse(req.body);
+    const userId = req.user?.userId;
+    const isAdminUser = isAdmin(req.user?.role);
+    if (!parsed.success) {
+        return sendError(reply, 400, "Invalid slot data", "Invalid request");
+    }
+
+    const slotData = parsed.data;
+    try {
+        if (!userId || !isAdminUser) {
+            return sendError(reply, 403, "Forbidden", "You do not have permission to add a slot");
+        }
+        if (slotData.endTime <= slotData.startTime) {
+            return sendError(reply, 400, "Invalid slot times", "End time must be after start time");
+        }
+        if (slotData.startTime < new Date()) {
+            return sendError(reply, 400, "Invalid slot time", "Start time must be in the future");
+        }
+        const newSlot = await addSlot(slotData, userId);
+        return reply.send({
+            message: "Slot added successfully",
+            slot: newSlot
+        });
+    } catch (error: any) {
+        console.log(error);
+        return sendError(reply, 500, error.message, "Failed to add slot");
+    }
+}
+
+export const DeleteSlotHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const userId = req.user?.userId;
+    const isAdminUser = isAdmin(req.user?.role);
+    if (!id) {
+        return sendError(reply, 400, "Slot ID is required", "Invalid request");
+    }
+    if (!userId || !isAdminUser) {
+        return sendError(reply, 403, "Forbidden", "You do not have permission to delete a slot");
+    }
+    try {
+        const deletedSlot = await deleteSlot(id);
+        return reply.send({
+            message: "Slot deleted successfully",
+            slot: deletedSlot
+        });
+    } catch (error: any) {
+        return sendError(reply, 422, error.message || "Failed to delete slot", error);
     }
 }
