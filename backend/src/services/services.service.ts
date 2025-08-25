@@ -34,8 +34,7 @@ export const getServiceById = async (id: string, isAdmin: boolean) => {
     // if admin user, include all bookings, else include only slot and status
     const Bookings = isAdmin ? {
         include: {
-            slot: true,
-            status: true
+            slot: true
         }
     } : {
         select: {
