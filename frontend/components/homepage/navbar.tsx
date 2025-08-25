@@ -141,31 +141,33 @@ const Navbar: React.FC = () => {
                             />
                         </div>
 
-                        {/* Action Icons */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-2 relative"
-                            onClick={() => router.push('/cart')}
-                            aria-label="Shopping cart"
-                        >
-                            <ShoppingCart className="w-5 h-5 text-gray-600" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                    {cartCount > 99 ? '99+' : cartCount}
-                                </span>
-                            )}
-                        </Button>
+                        {user?.role && user.adminRole && (
+                            <>
+                                < Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-2 relative"
+                                    onClick={() => router.push('/cart')}
+                                    aria-label="Shopping cart"
+                                >
+                                    <ShoppingCart className="w-5 h-5 text-gray-600" />
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                                            {cartCount > 99 ? '99+' : cartCount}
+                                        </span>
+                                    )}
+                                </Button>
 
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-2"
-                            aria-label="Grid menu"
-                        >
-                            <Grid3X3 className="w-5 h-5 text-gray-600" />
-                        </Button>
-
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-2"
+                                    aria-label="Grid menu"
+                                >
+                                    <Grid3X3 className="w-5 h-5 text-gray-600" />
+                                </Button>
+                            </>
+                        )}
                         {/* Authentication Section */}
                         {authenticated ? (
                             <DropdownMenu>

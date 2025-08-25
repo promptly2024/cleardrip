@@ -21,7 +21,6 @@ export class SubscriptionClass {
         throw new Error(result.message || "Cannot retrieve subscription");
       }
 
-      toast.success("Current subscription retrieved successfully");
       return result;
     } catch (error) {
       console.error("Error fetching current subscription:", error);
@@ -74,7 +73,6 @@ export class SubscriptionClass {
         throw new Error(result.message || "Cannot retrieve subscription plans");
       }
 
-      toast.success("Subscription plans retrieved successfully");
       return result;
     } catch (error) {
       console.error("Error fetching subscription plans:", error);
