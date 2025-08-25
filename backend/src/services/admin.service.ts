@@ -15,3 +15,20 @@ export const createAdminUser = async (adminData: { email: string; password: stri
         data: adminData,
     });
 }
+
+export async function getStaffById(id: string) {
+    const staff = await prisma.admin.findUnique({
+        where: {
+            id
+        }
+    });
+    return staff;
+}
+
+export async function deleteStaffById(id: string){
+    await prisma.admin.delete({
+        where: {
+            id
+        }
+    })
+}

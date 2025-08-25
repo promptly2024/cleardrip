@@ -59,4 +59,19 @@ export class AdminAuthService {
 
         return result;
     }
+
+    static async deleteAdmin(id: string): Promise<{ message: string }> {
+        const response = await fetch(`${API_BASE_URL}/auth/admin/delete/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to delete admin user');
+        }
+
+        return result;
+    }
 };

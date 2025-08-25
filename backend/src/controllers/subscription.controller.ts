@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
 import { SubscriptionPlanSchema } from "@/schemas/subscriptionSchema";
-import { createSubscription, createSubscriptionPlans, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
+import { createSubscription, createSubscriptionPlans, deleteSubscriptionById, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
 import { sendError } from "@/utils/errorResponse";
 import { FastifyReply, FastifyRequest } from "fastify";
 
@@ -95,5 +95,27 @@ export const CreateSubscriptionDetailsHandler = async (req: FastifyRequest, res:
     } catch (error) {
         logger.error(error);
         return sendError(res, 500, "Internal server error.");
+    }
+}
+
+export async function deleteSubscriptionHandler(req: FastifyRequest, res: FastifyReply) {
+    const { id } = req.params as { id: string };
+    if (!id) {
+        return sendError(res, 400, 'Subscription id is required');
+    }
+
+    try {
+        const deleted = await deleteSubscriptionById(id);
+        if (!deleted) {
+            return sendError(res, 404, 'Subscription not found');
+        }
+
+        return res.status(200).send({
+            message: 'Subscription deleted successfully',
+            success: true,
+        });
+    } catch (error) {
+        logger.error(error);
+        return sendError(res, 500, 'Internal server error');
     }
 }

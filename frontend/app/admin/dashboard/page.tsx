@@ -1,270 +1,150 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-    Users,
-    FileText,
-    LogOut,
-    Loader2,
-    Package,
-    ShieldCheck,
-    PlusCircle,
+  Users,
+  FileText,
+  LogOut,
+  Loader2,
+  Package,
+  ShieldCheck,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { AdminUser } from "@/lib/types/auth/adminAuth";
-import { AdminAuthService } from "@/lib/httpClient/adminAuth";
 import { toast } from "sonner";
 
 const AdminDashboard = () => {
-    const {
-        authenticated,
-        authLoading,
-        logout,
-        isSuperAdmin,
-        isAdmin,
-        user: loggedInUser,
-        role
-    } = useAuth();
-    const router = useRouter();
+  const {
+    authenticated,
+    authLoading,
+    logout,
+    isSuperAdmin,
+    isAdmin,
+    user: loggedInUser,
+    role,
+  } = useAuth();
 
-    const [adminList, setAdminList] = useState<AdminUser[]>([]);
-    const [newAdmin, setNewAdmin] = useState({
-        name: "",
-        email: "",
-        password: "",
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+  const router = useRouter();
 
-    useEffect(() => {
-        if (!authLoading && !authenticated) {
-            toast.error("You must be logged in to access this page", {
-                description: "Please log in to continue.",
-                action: {
-                    label: "Login",
-                    onClick: () => router.push("/admin/signin"),
-                },
-            });
-            router.push("/admin/signin");
-        }
-    }, [authLoading, authenticated, router]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    useEffect(() => {
-        if (isSuperAdmin) fetchAdminList();
-    }, [isSuperAdmin]);
-
-    const fetchAdminList = async () => {
-        try {
-            const result = await AdminAuthService.getAdminList();
-            setAdminList(result);
-        }
-        catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load admins");
-        }
-    };
-
-    const handleCreateAdmin = async () => {
-        setIsLoading(true);
-        try {
-            const result = await AdminAuthService.createAdmin(newAdmin);
-            if (result) {
-                setSuccess("Admin created");
-                setNewAdmin({ name: "", email: "", password: "" });
-                fetchAdminList();
-            }
-        }
-        catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to create admin");
-        }
-        finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        setIsLoading(true);
-        try {
-            await logout();
-            router.push("/admin/signin");
-        }
-        catch {
-            setError("Logout failed");
-        }
-        finally {
-            setIsLoading(false);
-        }
-    };
-
-    const dashboardCards = [
-        {
-            label: "View TDS",
-            icon: FileText,
-            description: "View TDS of Users",
-            href: "/admin/tds",
+  useEffect(() => {
+    if (!authLoading && !authenticated) {
+      toast.error("You must be logged in to access this page", {
+        description: "Please log in to continue",
+        action: {
+          label: "Login",
+          onClick: () => router.push("/admin/signin"),
         },
-        {
-            label: "Services",
-            icon: ShieldCheck,
-            description: "Manage platform services",
-            href: "/admin/dashboard/services",
-        },
-        ...(isSuperAdmin
-            ? [
-                {
-                    label: "Manage Products",
-                    icon: Package,
-                    description: "Add, edit property Products",
-                    href: "/admin/products",
-                },
-                {
-                    label: "Manage Admins/Staff",
-                    icon: Users,
-                    description: "View and manage admin accounts",
-                    href: "/admin/users",
-                },
-                {
-                    label: "Create Admins/Staff",
-                    icon: Users,
-                    description: "Create admin accounts",
-                    href: "/admin/staff",
-                },
-            ]
-            : []),
-    ];
+      });
+      router.push("/admin/signin");
+    }
+  }, [authLoading, authenticated, router]);
 
-    return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-7xl mx-auto space-y-8">
-                <div className="bg-white p-6 rounded-lg border flex justify-between items-center">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">
-                            Welcome, {loggedInUser?.name}
-                        </h1>
-                        <p className="text-sm text-gray-600">{loggedInUser?.adminRole}</p>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        disabled={isLoading}
-                        className="flex items-center text-red-600 border border-red-200 px-3 py-2 rounded hover:bg-red-50 text-sm"
-                    >
-                        {isLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : (
-                            <LogOut className="w-4 h-4 mr-2" />
-                        )}
-                        Logout
-                    </button>
-                </div>
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await logout();
+      router.push("/admin/signin");
+    } catch {
+      setError("Logout failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {dashboardCards.map((card) => (
-                        <a
-                            href={card.href}
-                            key={card.label}
-                            className="bg-white border p-5 rounded-lg hover:shadow"
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="p-2 bg-gray-100 rounded-md">
-                                    <card.icon className="w-5 h-5 text-gray-700" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-gray-900 text-sm">
-                                        {card.label}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {card.description}
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    ))}
-                </div>
+  const dashboardCards = [
+    {
+      label: "Services",
+      icon: ShieldCheck,
+      description: "Manage platform services",
+      href: "/admin/dashboard/services",
+    },
+    ...(isSuperAdmin
+      ? [
+          {
+            label: "Manage Products",
+            icon: Package,
+            description: "Add, edit property Products",
+            href: "/admin/products",
+          },
+          {
+            label: "Manage Admins/Staff",
+            icon: Users,
+            description: "Create and view staff accounts",
+            href: "/admin/staff",
+          },
+          {
+            label: "Manage Subscriptions",
+            icon: CalendarCheck,
+            description: "Create subscriptions",
+            href: "/admin/subscriptions",
+          },
+        ]
+      : []),
+  ];
 
-                {isSuperAdmin && (
-                    <>
-                        <div className="bg-white p-6 rounded-lg border space-y-4">
-                            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <Users className="w-5 h-5" /> Admin Users
-                            </h2>
-                            {adminList.map((admin) => (
-                                <div
-                                    key={admin.email}
-                                    className="border p-3 rounded text-sm text-gray-700"
-                                >
-                                    <div>
-                                        <strong>Name:</strong> {admin.name}
-                                    </div>
-                                    <div>
-                                        <strong>Email:</strong> {admin.email}
-                                    </div>
-                                    <div>
-                                        <strong>Role:</strong> {admin.role}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12">
+      <div className="max-w-7xl mx-auto flex flex-col gap-8">
+        {/* Header */}
+        <header className="bg-white p-6 rounded-lg border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Welcome, {loggedInUser?.name}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              {loggedInUser?.adminRole || role}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={isLoading}
+            className="self-start sm:self-center flex items-center gap-1 text-red-600 border border-red-200 px-4 py-2 rounded text-sm sm:text-base hover:bg-red-50 transition"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <LogOut className="w-5 h-5" />
+            )}
+            Logout
+          </button>
+        </header>
 
-                        <div className="bg-white p-6 rounded-lg border space-y-4">
-                            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <PlusCircle className="w-5 h-5" /> Create Admin
-                            </h2>
-                            <div className="space-y-3">
-                                <input
-                                    type="text"
-                                    placeholder="Name"
-                                    value={newAdmin.name}
-                                    onChange={(e) =>
-                                        setNewAdmin((prev) => ({ ...prev, name: e.target.value }))
-                                    }
-                                    className="w-full border px-3 py-2 rounded"
-                                />
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={newAdmin.email}
-                                    onChange={(e) =>
-                                        setNewAdmin((prev) => ({ ...prev, email: e.target.value }))
-                                    }
-                                    className="w-full border px-3 py-2 rounded"
-                                />
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={newAdmin.password}
-                                    onChange={(e) =>
-                                        setNewAdmin((prev) => ({
-                                            ...prev,
-                                            password: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full border px-3 py-2 rounded"
-                                />
-                                <button
-                                    onClick={handleCreateAdmin}
-                                    disabled={isLoading}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-                                >
-                                    {isLoading ? "Creating..." : "Create Admin"}
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                )}
+        {/* Dashboard Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {dashboardCards.map((card) => (
+            <a
+              key={card.label}
+              href={card.href}
+              className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4 hover:shadow-md transition"
+            >
+              <div className="bg-gray-100 p-3 rounded-md self-start">
+                <card.icon className="w-6 h-6 text-gray-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{card.label}</h3>
+              <p className="text-sm text-gray-500">{card.description}</p>
+            </a>
+          ))}
+        </section>
 
-                {error && (
-                    <div className="bg-red-100 text-red-700 p-4 rounded border border-red-200 text-sm">
-                        {error}
-                    </div>
-                )}
-                {success && (
-                    <div className="bg-green-100 text-green-700 p-4 rounded border border-green-200 text-sm">
-                        {success}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+        {/* Feedback messages */}
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded border border-red-300 text-center text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 text-green-700 p-3 rounded border border-green-300 text-center text-sm">
+            {success}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboard;

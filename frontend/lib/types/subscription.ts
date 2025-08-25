@@ -11,5 +11,16 @@ export type Subscription = {
 export type SubscriptionResponse = {
   message: string;
   success: boolean;
-  data: Subscription;
+  data: Subscription[];
 };
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number | string;
+  duration: string;
+  description?: string;
+  features?: string[];
+  savings?: string | null;
+  popular?: boolean;
+}

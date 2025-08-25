@@ -44,3 +44,11 @@ export const createSubscriptionPlans = async (data: SubscriptionPlanType) => {
         }
     });
 };
+
+export const deleteSubscriptionById = async (id: string) => {
+    return await prisma.subscriptionPlan.delete({
+        where: {
+            id
+        }
+    })
+}

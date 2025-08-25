@@ -91,9 +91,8 @@ export class SubscriptionClass {
         credentials: "include",
         body: JSON.stringify(subscriptionData),
       });
-
+      
       const result = await response.json();
-
       if (!response.ok) {
         toast.error("Failed to create subscription plan", {
           description: result.message || "Cannot create subscription plan",
@@ -108,5 +107,30 @@ export class SubscriptionClass {
       throw error;
     }
   }
+
+  // Delete Subscription
+  static async deleteSubscriptionPlan(id: string): Promise<{ message: string }> {
+    try {
+      const response = await fetch(`${APIURL}/subscriptions/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error("Failed to delete subscription plan", {
+          description: result.message || "Failed to delete plan",
+        });
+        throw new Error(result.message || "Failed to delete plan");
+      }
+
+      toast.success("Subscription plan deleted");
+      return result;
+    } catch (error) {
+      console.error("Error deleting subscription plan:", error);
+      throw error;
+    }
+  }
+
 }
 

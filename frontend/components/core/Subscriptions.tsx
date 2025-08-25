@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Star, Crown, Shield, Sparkles } from "lucide-react";
 import { SubscriptionClass } from "@/lib/httpClient/subscription";
+import { SubscriptionPlan } from "@/lib/types/subscription";
 
 // Icon assignment logic based on plan name
 const iconMap: Record<string, React.ElementType> = {
@@ -11,16 +12,6 @@ const iconMap: Record<string, React.ElementType> = {
   Standard: Star,
 };
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number | string;
-  duration: string;
-  description?: string;
-  features?: string[];
-  savings?: string | null;
-  popular?: boolean;
-}
 
 export default function SubscriptionsSection() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
