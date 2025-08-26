@@ -65,25 +65,25 @@ const AdminDashboard = () => {
     },
     ...(isSuperAdmin
       ? [
-          {
-            label: "Manage Products",
-            icon: Package,
-            description: "Add, edit property Products",
-            href: "/admin/products",
-          },
-          {
-            label: "Manage Admins/Staff",
-            icon: Users,
-            description: "Create and view staff accounts",
-            href: "/admin/staff",
-          },
-          {
-            label: "Manage Subscriptions",
-            icon: CalendarCheck,
-            description: "Create subscriptions",
-            href: "/admin/subscriptions",
-          },
-        ]
+        {
+          label: "Manage Products",
+          icon: Package,
+          description: "Add, edit property Products",
+          href: "/admin/dashboard/products",
+        },
+        {
+          label: "Manage Admins/Staff",
+          icon: Users,
+          description: "Create and view staff accounts",
+          href: "/admin/dashboard/staff",
+        },
+        {
+          label: "Manage Subscriptions",
+          icon: CalendarCheck,
+          description: "Create subscriptions",
+          href: "/admin/dashboard/subscriptions",
+        },
+      ]
       : []),
   ];
 
