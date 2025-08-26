@@ -7,7 +7,6 @@ import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
 import { uploadToCloudinary } from "@/utils/uploadToClaudinary";
 import { parseMultipartData } from "@/utils/parseMultipartData";
-import de from "zod/v4/locales/de.cjs";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = req.user?.userId;
