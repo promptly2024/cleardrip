@@ -584,7 +584,7 @@ export default function MyServices() {
                                     <SelectTrigger className="w-40">
                                         <SelectValue placeholder="Filter by status" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className='bg-white'>
                                         <SelectItem value="all">All Status</SelectItem>
                                         <SelectItem value="pending">Pending</SelectItem>
                                         <SelectItem value="scheduled">Scheduled</SelectItem>
@@ -598,7 +598,7 @@ export default function MyServices() {
                                     <SelectTrigger className="w-40">
                                         <SelectValue placeholder="Sort by" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className='bg-white'>
                                         <SelectItem value="newest">Newest First</SelectItem>
                                         <SelectItem value="oldest">Oldest First</SelectItem>
                                         <SelectItem value="price">Price</SelectItem>

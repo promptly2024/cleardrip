@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { Product, ProductInput } from '@/lib/types/products';
-import { ProductsClass } from '@/lib/httpClient/product';
+import React, { useEffect, useState } from "react";
+import { Product, ProductInput } from "@/lib/types/products";
+import { ProductsClass } from "@/lib/httpClient/product";
+import { Loader2, Package, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -11,10 +12,10 @@ export default function AdminProductsPage() {
   const [totalPage, setTotalPage] = useState(1);
 
   const [formData, setFormData] = useState<ProductInput>({
-    name: '',
+    name: "",
     price: 0,
-    image: '',
-    description: '',
+    image: "",
+    description: "",
     inventory: 0,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,21 +34,26 @@ export default function AdminProductsPage() {
       setProducts(res.products);
       setTotalPage(res.totalPage);
     } catch (e) {
-      setError('Failed to load products');
+      setError("Failed to load products");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleInputChange(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleInputChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
     const { name, value } = event.target;
 
-    if (name === 'price') {
+    if (name === "price") {
       const parsed = parseFloat(value);
       setFormData((prev) => ({ ...prev, price: isNaN(parsed) ? 0 : parsed }));
-    } else if (name === 'inventory') {
+    } else if (name === "inventory") {
       const parsed = parseInt(value, 10);
-      setFormData((prev) => ({ ...prev, inventory: isNaN(parsed) ? 0 : parsed }));
+      setFormData((prev) => ({
+        ...prev,
+        inventory: isNaN(parsed) ? 0 : parsed,
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -64,16 +70,16 @@ export default function AdminProductsPage() {
         await ProductsClass.createProduct(formData);
       }
       setFormData({
-        name: '',
+        name: "",
         price: 0,
-        image: '',
-        description: '',
+        image: "",
+        description: "",
         inventory: 0,
       });
       setEditingId(null);
       fetchProducts();
     } catch (e) {
-      setError('Failed to save product');
+      setError("Failed to save product");
     } finally {
       setLoading(false);
     }
@@ -84,190 +90,226 @@ export default function AdminProductsPage() {
     setFormData({
       name: product.name,
       price: Number(product.price),
-      image: product?.image || '',
-      description: product.description || '',
+      image: product?.image || "",
+      description: product.description || "",
       inventory: Number(product.inventory),
     });
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
     setLoading(true);
     setError(null);
     try {
       await ProductsClass.deleteProduct(id);
       fetchProducts();
     } catch (e) {
-      setError('Failed to delete product');
+      setError("Failed to delete product");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-8 bg-white-100 rounded-lg shadow-md">
-      <h1 className="text-h1 font-extrabold text-blue-500 mb-10 text-center">Admin Products</h1>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
+        <Package className="w-7 h-7 text-blue-600" />
+        Admin Products
+      </h1>
+
+      {/* Error message */}
       {error && (
-        <p className="text-red-600 bg-white-400 p-3 rounded-md max-w-xl mx-auto mb-6 text-center shadow-sm">
+        <p className="text-red-600 bg-red-50 border border-red-200 p-3 rounded-md max-w-xl mx-auto mb-6 text-center shadow-sm">
           {error}
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid gap-6 mb-12 md:grid-cols-2 max-w-5xl mx-auto">
-
-        {/* Product Name */}
-        <div className="flex flex-col">
-          <label htmlFor="name" className="mb-2 font-semibold text-blue-600">
-            Product Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            placeholder="Enter product name"
-            value={formData.name}
-            onChange={handleInputChange}
-            required
-            className="p-3 border border-blue-500 rounded-md text-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
-        </div>
-
-        {/* Price */}
-        <div className="flex flex-col">
-          <label htmlFor="price" className="mb-2 font-semibold text-blue-600">
-            Price ($)
-          </label>
-          <input
-            id="price"
-            name="price"
-            type="number"
-            placeholder="Enter price"
-            value={formData.price}
-            onChange={handleInputChange}
-            min={0}
-            step="0.01"
-            required
-            className="p-3 border border-blue-500 rounded-md text-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
-        </div>
-
-        {/* Description */}
-        <div className="flex flex-col md:col-span-2">
-          <label htmlFor="description" className="mb-2 font-semibold text-blue-600">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            placeholder="Enter product description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className="p-3 border border-blue-500 rounded-md text-lg resize-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            rows={4}
-          />
-        </div>
-
-        {/* Inventory */}
-        <div className="flex flex-col">
-          <label htmlFor="inventory" className="mb-2 font-semibold text-blue-600">
-            Inventory
-          </label>
-          <input
-            id="inventory"
-            name="inventory"
-            type="number"
-            placeholder="Enter inventory count"
-            value={formData.inventory}
-            onChange={handleInputChange}
-            min={0}
-            required
-            className="p-3 border border-blue-500 rounded-md text-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
-        </div>
-
-        {/* Image URL */}
-        <div className="flex flex-col md:col-span-2">
-          <label htmlFor="image" className="mb-2 font-semibold text-blue-600">
-            Image URL
-          </label>
-          <input
-            id="image"
-            name="image"
-            type="url"
-            placeholder="Enter image URL"
-            value={formData.image}
-            onChange={handleInputChange}
-            required
-            className="p-3 border border-blue-500 rounded-md text-lg focus:ring-2 focus:ring-blue-400 focus:outline-none w-full"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-6 md:col-span-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-grow bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-md text-lg font-semibold disabled:opacity-50 transition"
-          >
-            {editingId ? 'Update Product' : 'Create Product'}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingId(null);
-                setFormData({
-                  name: '',
-                  price: 0,
-                  image: '',
-                  description: '',
-                  inventory: 0,
-                });
-              }}
-              className="flex-grow bg-white-500 hover:bg-white-600 text-blue-700 py-3 rounded-md text-lg font-semibold transition border border-blue-500"
+      {/* Form */}
+      <div className="bg-white rounded-lg shadow p-6 mb-10 max-w-5xl mx-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-6 md:grid-cols-2"
+        >
+          {/* Product Name */}
+          <div className="flex flex-col">
+            <label
+              htmlFor="name"
+              className="mb-2 text-sm font-medium text-gray-700"
             >
-              Cancel
+              Product Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              placeholder="Enter product name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Price */}
+          <div className="flex flex-col">
+            <label
+              htmlFor="price"
+              className="mb-2 text-sm font-medium text-gray-700"
+            >
+              Price (₹)
+            </label>
+            <input
+              id="price"
+              name="price"
+              type="number"
+              placeholder="Enter price"
+              value={formData.price}
+              onChange={handleInputChange}
+              min={0}
+              step="0.01"
+              required
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col md:col-span-2">
+            <label
+              htmlFor="description"
+              className="mb-2 text-sm font-medium text-gray-700"
+            >
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              placeholder="Enter product description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={4}
+              className="p-3 border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Inventory */}
+          <div className="flex flex-col">
+            <label
+              htmlFor="inventory"
+              className="mb-2 text-sm font-medium text-gray-700"
+            >
+              Inventory
+            </label>
+            <input
+              id="inventory"
+              name="inventory"
+              type="number"
+              placeholder="Enter inventory count"
+              value={formData.inventory}
+              onChange={handleInputChange}
+              min={0}
+              required
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Image URL */}
+          <div className="flex flex-col md:col-span-2">
+            <label
+              htmlFor="image"
+              className="mb-2 text-sm font-medium text-gray-700"
+            >
+              Image URL
+            </label>
+            <input
+              id="image"
+              name="image"
+              type="url"
+              value={formData.image}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter image URL"
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-6 md:col-span-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-grow flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            >
+              {loading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
+              {editingId ? "Update Product" : "Create Product"}
             </button>
-          )}
-        </div>
-      </form>
+
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setFormData({
+                    name: "",
+                    price: 0,
+                    image: "",
+                    description: "",
+                    inventory: 0,
+                  });
+                }}
+                className="flex-grow flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 border py-3 rounded-lg font-semibold transition"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
 
       {/* Products Grid */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-          <p className="text-center py-8">Loading...</p>
+          <div className="text-center py-10 text-gray-500">Loading...</div>
         ) : products.length === 0 ? (
-          <p className="text-center py-8 text-blue-800">No products found.</p>
+          <div className="text-center py-12 text-gray-500 col-span-full">
+            <Package className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p>No products found</p>
+          </div>
         ) : (
           products.map((product) => (
             <div
               key={product.id}
-              className="border border-blue-500 rounded-lg p-6 flex flex-col items-center hover:shadow-lg transition cursor-pointer bg-white-100"
+              className="p-6 bg-white border rounded-lg shadow-sm hover:shadow-md transition flex flex-col"
             >
               <img
-                src={product.image || ''}
+                src={product.image || ""}
                 alt={product.name}
-                className="max-w-full max-h-40 object-contain mb-5 rounded-md border border-blue-300"
+                className="h-40 w-full object-contain mb-4 rounded"
               />
-              <div className="text-center mb-4">
-                <h2 className="text-h3 font-semibold text-blue-600">{product.name}</h2>
-                <p className="text-blue-700 font-bold mt-1">${product.price.toFixed(2)}</p>
-                <p className="mt-1 text-blue-800 font-medium">Inventory: {product.inventory}</p>
-                <p className="mt-3 text-blue-700">{product.description}</p>
+              <div className="flex-1 text-center space-y-1">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {product.name}
+                </h2>
+                <p className="text-blue-600 font-semibold">
+                  ${product.price.toFixed(2)}
+                </p>
+                <p className="text-gray-600">
+                  Inventory: {product.inventory}
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  {product.description}
+                </p>
               </div>
-              <div className="flex gap-4">
+              <div className="mt-4 flex justify-center gap-3">
                 <button
                   onClick={() => handleEdit(product)}
-                  className="px-5 py-2 bg-blue-300 hover:bg-blue-400 rounded-md text-blue-700 font-semibold transition"
-                  aria-label={`Edit ${product.name}`}
+                  className="px-4 py-2 flex items-center gap-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition"
                 >
-                  Edit
+                  <Edit className="w-4 h-4" /> Edit
                 </button>
                 <button
                   onClick={() => handleDelete(product.id)}
-                  className="px-5 py-2 bg-blue-700 hover:bg-blue-800 rounded-md text-white font-semibold transition"
-                  aria-label={`Delete ${product.name}`}
+                  className="px-4 py-2 flex items-center gap-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
                 >
-                  Delete
+                  <Trash2 className="w-4 h-4" /> Delete
                 </button>
               </div>
             </div>
@@ -276,21 +318,21 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-center gap-6 mt-10 mb-6 items-center">
+      <div className="flex justify-center gap-6 mt-10 items-center">
         <button
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
-          className="px-6 py-3 bg-white-500 border border-blue-500 rounded-md hover:bg-white-600 disabled:opacity-50 shadow-md transition"
+          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition shadow-sm"
         >
           Prev
         </button>
-        <span className="text-blue-700 font-semibold select-none">
+        <span className="text-gray-700 font-semibold select-none">
           {page} / {totalPage}
         </span>
         <button
           disabled={page === totalPage}
           onClick={() => setPage(page + 1)}
-          className="px-6 py-3 bg-white-500 border border-blue-500 rounded-md hover:bg-white-600 disabled:opacity-50 shadow-md transition"
+          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition shadow-sm"
         >
           Next
         </button>
