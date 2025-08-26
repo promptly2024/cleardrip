@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+} */
+
 :root {
   /* Blue palette */
   --blue-50:   #e6edf4;
@@ -25,7 +37,7 @@
   --white-700: #a6a4a4;
   --white-800: #817f7f;
   --white-900: #626161;
-  
+
   /* Font family */
   --font-primary: 'Manrope', sans-serif;
   /* Typography sizes */
@@ -39,6 +51,14 @@
   --h4-line: 24px;
   --body-size: 16px;
   --body-line: 24px;
+  --sidebar:   hsl(0 0% 98%);
+  --sidebar-foreground:   hsl(240 5.3% 26.1%);
+  --sidebar-primary:   hsl(240 5.9% 10%);
+  --sidebar-primary-foreground:   hsl(0 0% 98%);
+  --sidebar-accent:   hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground:   hsl(240 5.9% 10%);
+  --sidebar-border:   hsl(220 13% 91%);
+  --sidebar-ring:   hsl(217.2 91.2% 59.8%);
 }
 
 body {
@@ -81,3 +101,27 @@ h4, .h4 {
 .bg-blue-100 { background: var(--blue-100); }
 .bg-white-100 { background: var(--white-100); }
 .border-blue-500 { border-color: var(--blue-500);}
+
+.dark {
+  --sidebar:   hsl(240 5.9% 10%);
+  --sidebar-foreground:   hsl(240 4.8% 95.9%);
+  --sidebar-primary:   hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground:   hsl(0 0% 100%);
+  --sidebar-accent:   hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground:   hsl(240 4.8% 95.9%);
+  --sidebar-border:   hsl(240 3.7% 15.9%);
+  --sidebar-ring:   hsl(217.2 91.2% 59.8%);
+}
+
+@theme inline {
+  --color-sidebar:   var(--sidebar);
+  --color-sidebar-foreground:   var(--sidebar-foreground);
+  --color-sidebar-primary:   var(--sidebar-primary);
+  --color-sidebar-primary-foreground:   var(--sidebar-primary-foreground);
+  --color-sidebar-accent:   var(--sidebar-accent);
+  --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
+  --color-sidebar-border:   var(--sidebar-border);
+  --color-sidebar-ring:   var(--sidebar-ring);
+}
+
+

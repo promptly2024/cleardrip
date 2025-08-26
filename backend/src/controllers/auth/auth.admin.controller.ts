@@ -1,5 +1,5 @@
 import { adminCreateSchema, adminSignInSchema } from "@/schemas/auth.schema";
-import { createAdminUser, deleteStaffById, findAdminByEmail, findAllAdmins, getStaffById } from "@/services/admin.service";
+import { createAdminUser, deleteStaffById, fetchAdminDashboardStats, findAdminByEmail, findAllAdmins, getStaffById } from "@/services/admin.service";
 import { setAuthCookie } from "@/utils/cookies";
 import { sendError } from "@/utils/errorResponse";
 import { comparePassword, hashPassword } from "@/utils/hash";
@@ -50,7 +50,7 @@ export const CreateAdminUserHandler = async (req: FastifyRequest, reply: Fastify
             return sendError(reply, 409, "Admin already exists", "An admin with this email already exists");
         }
         const hashedPassword = await hashPassword(body.data.password);
-        
+
         const newAdmin = await createAdminUser({
             email: body.data.email,
             password: hashedPassword,
@@ -66,13 +66,27 @@ export const DeleteStaff = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
         const existingStaff = await getStaffById(id);
-        if(!existingStaff){
+        if (!existingStaff) {
             return reply.code(404).send({ error: "Staff not found" });
         }
         const deletedStaff = await deleteStaffById(id);
         return reply.code(200).send({ message: "Staff deleted successfully" });
     }
-    catch(error){
+    catch (error) {
         return sendError(reply, 500, "Delete staff failed", error);
+    }
+}
+
+export const AdminDashboardOverviewHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        // Fetch necessary data for the overview
+        const stats = await fetchAdminDashboardStats();
+
+        return reply.code(200).send({
+            message: "Admin dashboard overview fetched successfully",
+            stats
+        });
+    } catch (error) {
+        return sendError(reply, 500, "Failed to fetch admin dashboard overview", error);
     }
 }

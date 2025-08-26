@@ -25,10 +25,36 @@ export async function getStaffById(id: string) {
     return staff;
 }
 
-export async function deleteStaffById(id: string){
+export async function deleteStaffById(id: string) {
     await prisma.admin.delete({
         where: {
             id
         }
     })
+}
+
+export async function fetchAdminDashboardStats() {
+    const totalAdmins = await prisma.admin.count();
+    const totalUsers = await prisma.user.count();
+    const totalServices = await prisma.serviceDefinition.count();
+    const totalServicesBooked = await prisma.serviceBooking.count();
+    const totalSubscriptions = await prisma.subscriptionPlan.count();
+    const totalSubscriptionsBooked = await prisma.subscription.count();
+    const availableSlots = await prisma.slot.count({
+        where: {
+            startTime: {
+                gt: new Date()
+            }
+        }
+    });
+
+    return {
+        totalAdmins,
+        totalUsers,
+        totalServices,
+        totalServicesBooked,
+        totalSubscriptions,
+        totalSubscriptionsBooked,
+        availableSlots
+    };
 }

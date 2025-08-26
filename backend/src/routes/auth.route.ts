@@ -1,4 +1,4 @@
-import { AdminSignInHandler, AdminGetAllListHandler, CreateAdminUserHandler, DeleteStaff } from "@/controllers/auth/auth.admin.controller"
+import { AdminSignInHandler, AdminGetAllListHandler, CreateAdminUserHandler, DeleteStaff, AdminDashboardOverviewHandler } from "@/controllers/auth/auth.admin.controller"
 import { meHandler } from "@/controllers/auth/auth.me.controller"
 import { signinHandler, signoutHandler, signupHandler, forgotPasswordHandler, resetPasswordHandler, updateProfileHandler, updateFCMTokenHandler } from "@/controllers/auth/auth.user.controller"
 import { requireRole } from "@/middleware/requireRole"
@@ -22,4 +22,5 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.post("/admin/create", { preHandler: requireRole(["SUPER_ADMIN"]) }, CreateAdminUserHandler)
     fastify.delete("/admin/delete/:id", { preHandler: requireRole(["SUPER_ADMIN"]) }, DeleteStaff)
     fastify.get("/admin/list", { preHandler: requireRole(["SUPER_ADMIN"]) }, AdminGetAllListHandler)
+    fastify.get("/admin/dashboard/stats", { preHandler: requireRole(["SUPER_ADMIN"]) }, AdminDashboardOverviewHandler)
 }
