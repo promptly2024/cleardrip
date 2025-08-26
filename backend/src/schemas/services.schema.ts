@@ -29,9 +29,9 @@ export const serviceDefinitionSchema = z.object({
 
 export type ServiceDefinitionInput = z.infer<typeof serviceDefinitionSchema>
 
-export const slotSchema = z.object({
+export const slotSchema = z.array(z.object({
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-});
+}));
 
 export type SlotInput = z.infer<typeof slotSchema>;

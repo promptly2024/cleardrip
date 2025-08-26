@@ -233,16 +233,11 @@ export const AddSlotHandler = async (req: FastifyRequest, reply: FastifyReply) =
         if (!userId || !isAdminUser) {
             return sendError(reply, 403, "Forbidden", "You do not have permission to add a slot");
         }
-        if (slotData.endTime <= slotData.startTime) {
-            return sendError(reply, 400, "Invalid slot times", "End time must be after start time");
-        }
-        if (slotData.startTime < new Date()) {
-            return sendError(reply, 400, "Invalid slot time", "Start time must be in the future");
-        }
-        const newSlot = await addSlot(slotData, userId);
+
+        const newSlot = await addSlot(slotData);
         return reply.send({
             message: "Slot added successfully",
-            slot: newSlot
+            slot: newSlot.inserted
         });
     } catch (error: any) {
         console.log(error);
@@ -264,7 +259,7 @@ export const DeleteSlotHandler = async (req: FastifyRequest, reply: FastifyReply
     try {
         const { deleted, notDeleted } = await deleteSlot(slotIds);
         return reply.send({
-            message: "Slot deleted successfully",
+            message: ` ${deleted.length} Slots deleted successfully`,
             deletedSlot: deleted,
             notDeletedSlot: notDeleted
         });

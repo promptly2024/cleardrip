@@ -168,10 +168,32 @@ export const addServiceDefinition = async (data: ServiceDefinitionInput, userId:
     return service;
 };
 
-export const addSlot = async (data: SlotInput, userId: string) => {
-    const slot = await prisma.slot.create({ data });
-    return slot;
+export const addSlot = async (data: SlotInput) => {
+    const now = new Date();
+
+    // make sure we return a flat array of valid slots
+    const validSlots: SlotInput = data.filter(
+        (slot) =>
+            slot.endTime > slot.startTime &&
+            slot.startTime > now
+    );
+
+    if (validSlots.length === 0) {
+        return { inserted: 0 };
+    }
+
+    // transaction ensures atomicity
+    const result = await prisma.$transaction(async (tx) => {
+        const inserted = await tx.slot.createMany({
+            data: validSlots,
+            skipDuplicates: true,
+        });
+        return inserted.count;
+    });
+
+    return { inserted: result };
 };
+
 
 export const deleteSlot = async (ids: string[]) => {
     // Get all requested slots

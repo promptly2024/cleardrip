@@ -217,6 +217,14 @@ const ImprovedAdminServices = () => {
             toast.error("Please select start and end dates")
             return
         }
+        if (startDate < new Date().toISOString().split("T")[0]) {
+            toast.error("Start date cannot be in the past")
+            return
+        }
+        if (endDate < startDate) {
+            toast.error("End date cannot be in the past")
+            return
+        }
 
         setSlotsLoading(true)
         try {
@@ -245,23 +253,24 @@ const ImprovedAdminServices = () => {
                 }
             }
 
-            // Create slots in batches
-            let created = 0
-            for (const slot of slotsToCreate) {
-                try {
-                    const response = await fetch(`${APIURL}/services/add/slots`, {
-                        method: "POST",
-                        credentials: "include",
-                        body: JSON.stringify(slot),
-                        headers: { "Content-Type": "application/json" },
-                    })
-                    if (response.ok) created++
-                } catch (error) {
-                    console.error("Failed to create slot:", error)
+            // for (const slot of slotsToCreate) {
+            try {
+                const response = await fetch(`${APIURL}/services/add/slots`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: JSON.stringify(slotsToCreate),
+                    headers: { "Content-Type": "application/json" },
+                })
+                if (response.ok) {
+                    const data = await response.json();
+                    toast.success(`Successfully created ${data.slot} slots!`)
                 }
+            } catch (error) {
+                console.error("Failed to create slot:", error)
             }
+            // }
 
-            toast.success(`Successfully created ${created} slots!`)
+
             fetchSlots()
             setIsSlotManagerOpen(false)
         } catch (error) {
@@ -359,8 +368,11 @@ const ImprovedAdminServices = () => {
             })
 
             if (response.ok) {
-                toast.success(`${selectedSlotIds.length} slots deleted successfully!`)
-                setSelectedSlotIds([])
+                const { message, deletedSlot, notDeletedSlot } = await response.json()
+                toast.success(message, {
+                    description: notDeletedSlot.length > 0 ? `${notDeletedSlot.length} slots could not be deleted as they are booked.` : "",
+                })
+                setSelectedSlotIds(notDeletedSlot.map((s: any) => s.id));
                 fetchSlots()
             } else {
                 toast.error("Failed to delete slots")
@@ -671,6 +683,25 @@ const ImprovedAdminServices = () => {
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-900">Time Slot Management</h3>
                                 <div className="flex gap-3">
+                                    {selectedSlotIds.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                if (selectedSlotIds.length === slots.length) {
+                                                    setSelectedSlotIds([])
+                                                } else {
+                                                    setSelectedSlotIds(slots.map((s) => s.id))
+                                                }
+                                            }}
+                                            disabled={slotsLoading}
+                                            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                                        >
+                                            {selectedSlotIds.length === slots.length ? (
+                                                "Deselect All"
+                                            ) : (
+                                                "Select All"
+                                            )}
+                                        </button>
+                                    )}
                                     {selectedSlotIds.length > 0 && (
                                         <button
                                             onClick={deleteSelectedSlots}
@@ -994,6 +1025,7 @@ const ImprovedAdminServices = () => {
                                     <input
                                         type="date"
                                         value={bulkSlotSettings.startDate}
+                                        min={new Date().toISOString().split("T")[0]}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, startDate: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
@@ -1003,6 +1035,7 @@ const ImprovedAdminServices = () => {
                                     <input
                                         type="date"
                                         value={bulkSlotSettings.endDate}
+                                        min={bulkSlotSettings.startDate || new Date().toISOString().split("T")[0]}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, endDate: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />

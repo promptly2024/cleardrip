@@ -6,7 +6,6 @@ import { comparePassword, hashPassword } from "@/utils/hash";
 import { generateToken } from "@/utils/jwt";
 import { FastifyReply, FastifyRequest } from "fastify";
 
-
 export const AdminSignInHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const body = adminSignInSchema.safeParse(req.body);
     if (!body.success) {
