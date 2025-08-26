@@ -13,11 +13,24 @@ export const logNewTDS = async (tdsData: TDSInput, userId: string) => {
 };
 
 export const getRecentTDSLogs = async (userId?: string, take?: number, skip?: number) => {
-    const tdsLogs = await prisma.tDSLog.findMany({
-        where: { userId },
-        orderBy: { timestamp: "desc" },
-        take,
-        skip,
-    });
-    return tdsLogs;
+    const [tdsLogs, total] = await Promise.all([
+        prisma.tDSLog.findMany({
+            where: { userId },
+            orderBy: { timestamp: "desc" },
+            take,
+            skip,
+        }),
+        prisma.tDSLog.count({
+            where: { userId },
+        }),
+    ]);
+    return {
+        tdsLogs,
+        pagination: {
+            take,
+            skip,
+            total,
+            hasMore: ((take ?? 0) + (skip ?? 0)) < total,
+        },
+    };
 }

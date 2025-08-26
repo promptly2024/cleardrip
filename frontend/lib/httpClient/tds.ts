@@ -36,16 +36,18 @@ export class TdsClass {
             });
 
             const result = await response.json();
-
             if (!response.ok) {
                 toast.error('Failed to fetch TDS logs', {
-                    description: result.error || 'Cannot retrieve recent TDS logs',
+                    description: result.message || result.error || 'Cannot retrieve recent TDS logs',
+                    action: {
+                        label: 'Retry',
+                        onClick: () => {
+                            this.getRecentTDSLogs(page, limit);
+                        },
+                    },
                 });
                 throw new Error(result.error || 'Cannot retrieve recent TDS logs');
             }
-
-            toast.success('TDS logs retrieved successfully');
-
             return {
                 tdsLogs: result.tdsLogs || result,
                 pagination: result.pagination || null,

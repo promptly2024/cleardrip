@@ -15,6 +15,8 @@ async function main() {
     await prisma.serviceBooking.deleteMany();
     await prisma.serviceDefinition.deleteMany();
     await prisma.oTPSession.deleteMany();
+    // await prisma.slot.deleteMany();
+    await prisma.tDSLog.deleteMany();
     await prisma.user.deleteMany();
     await prisma.address.deleteMany();
     await prisma.admin.deleteMany();
@@ -118,6 +120,24 @@ async function main() {
             }
         })
     ]);
+
+    // Fix: Explicitly type dummyLogs
+    const dummyLogs: { userId: string; tdsValue: number; timestamp: Date }[] = []
+    const count = 1000; // number of dummy logs to create
+
+    for (let i = 0; i < count; i++) {
+        dummyLogs.push({
+            userId: users[Math.floor(Math.random() * users.length)].id,
+            tdsValue: Math.floor(Math.random() * 100) + 1, // random value between 1–100
+            timestamp: new Date(Date.now() - i * 60 * 60 * 1000), // past i hours
+        })
+    }
+
+    const result = await prisma.tDSLog.createMany({
+        data: dummyLogs,
+    })
+
+    console.log(`${result.count} dummy TDS logs inserted.`)
 
     // Create admins
     const admins = await Promise.all([

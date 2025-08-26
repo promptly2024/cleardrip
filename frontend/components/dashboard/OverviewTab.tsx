@@ -7,7 +7,7 @@ import { ServicesClass } from "@/lib/httpClient/services";
 import { TDSLog } from "@/lib/types/tds";
 import { MoreHorizontal, ArrowUpRight } from "lucide-react";
 
-export const OverviewTab = ({ user }: { user?: { name?: string } }) => {
+export const OverviewTab = ({ user }: { user?: { name?: string, loyaltyBadge?: string } }) => {
   const [tdsLogs, setTdsLogs] = useState<TDSLog[]>([]);
   const [liveTDS, setLiveTDS] = useState<number | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
@@ -19,7 +19,7 @@ export const OverviewTab = ({ user }: { user?: { name?: string } }) => {
       setLoading(true);
       try {
         // Fetch TDS logs (last 7 is enough for chart and live)
-        const tdsRes = await TdsClass.getRecentTDSLogs(7, 0);
+        const tdsRes = await TdsClass.getRecentTDSLogs(1, 7);
         setTdsLogs(Array.isArray(tdsRes.tdsLogs) ? tdsRes.tdsLogs : []);
         if (tdsRes.tdsLogs?.length) {
           setLiveTDS(tdsRes.tdsLogs[tdsRes.tdsLogs.length - 1]?.tdsValue || null);
@@ -27,7 +27,6 @@ export const OverviewTab = ({ user }: { user?: { name?: string } }) => {
 
         // Fetch subscription
         const subRes = await SubscriptionClass.getCurrentSubscription();
-        console.log("Current Sub Plan is ", subRes);
         setSubscription(subRes.data);
 
         // Fetch next RO service (find next scheduled/upcoming)
@@ -189,10 +188,10 @@ export const OverviewTab = ({ user }: { user?: { name?: string } }) => {
                   </span>
                 </p>
               </div>
-              {subscription.loyaltyBadge && (
+              {user?.loyaltyBadge && (
                 <div>
                   <p className="text-sm text-gray-600">
-                    Badge: <span className="font-medium text-yellow-600">{subscription.loyaltyBadge}</span>
+                    Badge: <span className="font-medium text-yellow-600">{user.loyaltyBadge}</span>
                   </p>
                 </div>
               )}

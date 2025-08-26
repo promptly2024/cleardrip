@@ -26,8 +26,29 @@ export const getServiceSlotsAvailable = async () => {
 
     // Filter slots with less than 1 bookings
     const availableSlots = slots.filter(slot => slot.bookings.length < 1);
+    // remove bookings information from available slots
+    const availableSlotsWithoutBookings = availableSlots.map(slot => ({
+        ...slot,
+        bookings: undefined,
+    }));
+    return availableSlotsWithoutBookings;
+};
 
-    return availableSlots;
+export const getAllSlots = async () => {
+    const slots = await prisma.slot.findMany({
+        include: {
+            bookings: true,
+        },
+        orderBy: {
+            startTime: "asc"
+        }
+    });
+    // for each slots, count the number of bookings
+    const slotsWithBookingCount = slots.map(slot => ({
+        ...slot,
+        bookingCount: slot.bookings.length,
+    }));
+    return slotsWithBookingCount;
 };
 
 export const getServiceById = async (id: string, isAdmin: boolean) => {
@@ -152,24 +173,35 @@ export const addSlot = async (data: SlotInput, userId: string) => {
     return slot;
 };
 
-export const deleteSlot = async (id: string) => {
-    const slot = await prisma.slot.findUnique({
-        where: { id },
+export const deleteSlot = async (ids: string[]) => {
+    // Get all requested slots
+    const slots = await prisma.slot.findMany({
+        where: { id: { in: ids } },
     });
 
-    if (!slot) {
-        throw new Error("Slot not found");
+    if (!slots || slots.length === 0) {
+        throw new Error("No slots found");
     }
-    // transaction , if any bookings in this slots, then can not be delete
-    const bookings = await prisma.serviceBooking.findMany({
-        where: { slotId: id },
-    });
-    if (bookings.length > 0) {
-        throw new Error("Cannot delete slot with existing bookings");
-    }
-    await prisma.slot.delete({
-        where: { id },
+
+    // Find slots that are in use
+    const bookedSlots = await prisma.serviceBooking.findMany({
+        where: { slotId: { in: ids } },
+        select: { slotId: true },
     });
 
-    return slot;
+    const bookedSlotIds = bookedSlots.map(b => b.slotId);
+
+    // Find slots that can be deleted
+    const deletableSlotIds = ids.filter(id => !bookedSlotIds.includes(id));
+
+    if (deletableSlotIds.length > 0) {
+        await prisma.slot.deleteMany({
+            where: { id: { in: deletableSlotIds } },
+        });
+    }
+
+    return {
+        deleted: deletableSlotIds,
+        notDeleted: bookedSlotIds,
+    };
 };

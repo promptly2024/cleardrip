@@ -54,9 +54,14 @@ export const GetRecentTDSHandler = async (req: FastifyRequest, reply: FastifyRep
     }
     const isAdminUser = isAdmin(req.user?.role);
     try {
-        const tdsLogs = await getRecentTDSLogs(isAdminUser ? undefined : userId, take, skip);
-        return reply.send(tdsLogs);
-    } catch (error) {
+        const { tdsLogs, pagination } = await getRecentTDSLogs(isAdminUser ? undefined : userId, take, skip);
+        return reply.send({
+            message: "Recent TDS logs retrieved successfully",
+            tdsLogs,
+            pagination
+        });
+    } catch (error: any) {
+        console.error("Error retrieving recent TDS logs:", error);
         return sendError(reply, 500, "Failed to retrieve TDS logs", error);
     }
 }
@@ -68,16 +73,11 @@ export const GetTDSByUserIdHandler = async (req: FastifyRequest<{ Params: { user
         return sendError(reply, 400, "User ID is required");
     }
     try {
-        const tdsLogs = await getRecentTDSLogs(userId, take, skip);
+        const { tdsLogs, pagination } = await getRecentTDSLogs(userId, take, skip);
         return reply.send({
             userId,
             tdsLogs,
-            pagination: {
-                take,
-                skip,
-                total: tdsLogs.length,
-                hasMore: take + skip < tdsLogs.length,
-            },
+            pagination
         });
     } catch (error) {
         return sendError(reply, 500, "Failed to retrieve TDS logs for user", error);

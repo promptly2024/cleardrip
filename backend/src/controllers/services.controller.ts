@@ -1,12 +1,13 @@
 import { FastifyRequest } from "fastify/types/request";
 import { FastifyReply } from "fastify/types/reply";
 import { serviceDefinitionSchema, serviceSchema, slotSchema, statusSchema } from "@/schemas/services.schema";
-import { addServiceDefinition, addSlot, bookService, deleteService, deleteSlot, getAllPublicService, getAllServices, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
+import { addServiceDefinition, addSlot, bookService, deleteService, deleteSlot, getAllPublicService, getAllServices, getAllSlots, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
 import { uploadToCloudinary } from "@/utils/uploadToClaudinary";
 import { parseMultipartData } from "@/utils/parseMultipartData";
+import de from "zod/v4/locales/de.cjs";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = req.user?.userId;
@@ -97,6 +98,19 @@ export const GetServiceSlotsAvailableHandler = async (req: FastifyRequest, reply
         return sendError(reply, 500, "Failed to retrieve service slots", error);
     }
 }
+
+export const GetAllSlotsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const slots = await getAllSlots();
+        return reply.send({
+            message: "All slots retrieved successfully",
+            slots
+        });
+    } catch (error) {
+        console.error("Failed to retrieve all slots:", error);
+        return sendError(reply, 500, "Failed to retrieve all slots", error);
+    }
+};
 
 export const GetAllServicesHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { take, skip } = parsePagination(req.query);
@@ -202,8 +216,8 @@ export const AddServiceHandler = async (req: FastifyRequest, reply: FastifyReply
             message: "Service added successfully",
             service: newService
         });
-    } catch (error) {
-        return sendError(reply, 500, "Failed to add service", error);
+    } catch (error: any) {
+        return sendError(reply, 500, error.message, "Failed to add service");
     }
 }
 
@@ -238,20 +252,22 @@ export const AddSlotHandler = async (req: FastifyRequest, reply: FastifyReply) =
 }
 
 export const DeleteSlotHandler = async (req: FastifyRequest, reply: FastifyReply) => {
-    const { id } = req.params as { id: string };
     const userId = req.user?.userId;
     const isAdminUser = isAdmin(req.user?.role);
-    if (!id) {
+    const body = req.body as { slotIds: string | string[] };
+    const slotIds = Array.isArray(body.slotIds) ? body.slotIds : [body.slotIds];
+    if (!slotIds.length) {
         return sendError(reply, 400, "Slot ID is required", "Invalid request");
     }
     if (!userId || !isAdminUser) {
         return sendError(reply, 403, "Forbidden", "You do not have permission to delete a slot");
     }
     try {
-        const deletedSlot = await deleteSlot(id);
+        const { deleted, notDeleted } = await deleteSlot(slotIds);
         return reply.send({
             message: "Slot deleted successfully",
-            slot: deletedSlot
+            deletedSlot: deleted,
+            notDeletedSlot: notDeleted
         });
     } catch (error: any) {
         return sendError(reply, 422, error.message || "Failed to delete slot", error);
