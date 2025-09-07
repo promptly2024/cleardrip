@@ -141,7 +141,7 @@ const Navbar: React.FC = () => {
                             />
                         </div>
 
-                        {user?.role && user.adminRole && (
+                        {authenticated && role === "USER" && (
                             <>
                                 < Button
                                     variant="ghost"
