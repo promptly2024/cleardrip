@@ -19,6 +19,7 @@ const Search = () => {
         <div>
             <h1>Search Page</h1>
             <p>Search Query: {searchQuery}</p>
+            This feature is not implemented yet.
         </div>
     );
 };

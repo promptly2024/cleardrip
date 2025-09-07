@@ -82,7 +82,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onBuyNo
         return isNaN(parsedPrice) ? price : `₹${parsedPrice.toLocaleString('en-IN')}`;
     };
 
-    const truncateText = (text: string, maxLength: number = 100) => {
+    const truncateText = (text: string | null, maxLength: number = 100) => {
+        if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     };
@@ -128,7 +129,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onBuyNo
                 </h3>
 
                 <p className="text-gray-600 text-sm leading-relaxed">
-                    {truncateText(product.description)}
+                    {truncateText(product?.description || '', 100) || 'No description available.'}
                 </p>
 
                 <div className="flex items-center justify-between pt-2">

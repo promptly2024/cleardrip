@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Upload, Clock, Calendar, MapPin, Star, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload, Clock, Star, CheckCircle } from 'lucide-react';
 import { APIURL } from '@/utils/env';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-
 interface Service {
   id: string;
   name: string;
@@ -48,7 +47,8 @@ interface SlotsDuration {
   updatedAt: string;
 }
 
-export default function ServiceBookingPage({ params }: { params: { id: string } }) {
+export default async function ServiceBookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const [service, setService] = useState<Service | null>(null);
   const [slots, setSlots] = useState<SlotsDuration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function ServiceBookingPage({ params }: { params: { id: string } 
   const fetchServiceData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${APIURL}/services/${params.id}`, {
+      const response = await fetch(`${APIURL}/services/${resolvedParams.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -160,7 +160,7 @@ export default function ServiceBookingPage({ params }: { params: { id: string } 
       }
       formData.append("slotId", selectedSlot.id);
       formData.append("serviceId", service.id);
-      
+
 
       const response = await fetch(`${APIURL}/services/book`, {
         method: 'POST',

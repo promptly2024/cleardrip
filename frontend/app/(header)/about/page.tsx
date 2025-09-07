@@ -1,4 +1,3 @@
-import Header from "@/components/layout/Header";
 import { Droplets, Shield, Smartphone, Users } from "lucide-react";
 
 export default function About(){

@@ -4,21 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { 
   ChevronLeft, 
-  Package, 
   AlertCircle, 
   Truck,
   Shield,
   RotateCcw,
   ShoppingCart,
-  Heart,
-  Star,
   Minus,
   Plus
 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Product } from '@/lib/types/products';
 import { useRouter } from 'next/navigation';
