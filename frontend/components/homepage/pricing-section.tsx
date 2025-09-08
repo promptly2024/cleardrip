@@ -257,7 +257,7 @@ function PricingCard({
       <div className="text-center mb-8">
         <div className="flex items-baseline justify-center gap-2 mb-2">
           <span className="text-3xl lg:text-4xl font-bold" style={{ color: 'var(--blue-900)' }}>₹{plan.price}</span>
-          <span className="text-lg" style={{ color: 'var(--blue-700)' }}>/ {plan.period}</span>
+          <span className="text-lg" style={{ color: 'var(--blue-700)' }}>/ {plan.period} days</span>
         </div>
         {plan.period === "Lifetime" && (
           <p className="text-sm text-green-600 font-medium">One-time payment</p>
