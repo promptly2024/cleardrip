@@ -8,6 +8,9 @@ import { sendError } from "@/utils/errorResponse";
 import { generateToken } from "@/utils/jwt";
 import { comparePassword } from "@/utils/hash";
 import { ZodError } from "zod";
+import { sendEmail } from "@/lib/email/sendEmail";
+import { UserSignUpTemplate } from "@/lib/email/template";
+import { emailQueue, emailQueueName } from "@/queues/email.queue";
 
 export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -23,6 +26,15 @@ export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) =>
         const token = generateToken({ userId: user.id, email: user.email, role: "USER" });
         setAuthCookie(reply, token, "USER")
 
+        if (user.email) {
+            // Send welcome email using the email queue
+            await emailQueue.add(emailQueueName, {
+                to: user.email,
+                subject: "Welcome to ClearDrip!",
+                message: `Hello ${user.name}, welcome to ClearDrip!`,
+                html: UserSignUpTemplate(user.name, user.email)
+            });
+        }
         return reply.code(201).send({
             message: "Registration successful",
             user: safeUser
@@ -39,7 +51,7 @@ export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) =>
 export const signinHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
         const body = signinSchema.parse(req.body)
-        const user = await findUserByEmailOrPhone(body.email,undefined, "USER");
+        const user = await findUserByEmailOrPhone(body.email, undefined, "USER");
         if (!user) {
             return reply.code(404).send({ error: "Invalid credentials" })
         }
