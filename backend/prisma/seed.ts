@@ -8,7 +8,6 @@ async function main() {
     console.log('Starting database seeding...');
 
     // Clear existing data
-    await prisma.whatsAppLog.deleteMany();
     await prisma.notification.deleteMany();
     await prisma.tDSLog.deleteMany();
     await prisma.subscription.deleteMany();
@@ -18,6 +17,7 @@ async function main() {
     // await prisma.slot.deleteMany();
     await prisma.tDSLog.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.whatsAppLog.deleteMany();
     await prisma.address.deleteMany();
     await prisma.admin.deleteMany();
     await prisma.product.deleteMany();
@@ -76,6 +76,7 @@ async function main() {
                 email: 'rohitkuyada@gmail.com',
                 phone: '+91-9876543210',
                 password: userPassword,
+                whatsappNumber: '+916392177974',
                 loyaltyStatus: 'GOLD',
                 addressId: addresses[0].id
             }

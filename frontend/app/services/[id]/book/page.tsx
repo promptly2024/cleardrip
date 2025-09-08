@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Upload, Clock, Star, CheckCircle } from 'lucide-react';
 import { APIURL } from '@/utils/env';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 interface Service {
   id: string;
   name: string;
@@ -47,8 +47,8 @@ interface SlotsDuration {
   updatedAt: string;
 }
 
-export default async function ServiceBookingPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
+export default function ServiceBookingPage() {
+  const { id } = useParams<{ id: string }>();
   const [service, setService] = useState<Service | null>(null);
   const [slots, setSlots] = useState<SlotsDuration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default async function ServiceBookingPage({ params }: { params: Promise<{
   const fetchServiceData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${APIURL}/services/${resolvedParams.id}`, {
+      const response = await fetch(`${APIURL}/services/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

@@ -14,6 +14,7 @@ export const signupSchema = z.object({
         postalCode: z.string().min(1, { message: "Postal code is required" }),
         country: z.string().min(1, { message: "Country is required" }),
     }),
+    whatsappNumber: z.string().min(10, { message: "WhatsApp number must be at least 10 digits" }).optional(),
 })
 export type SignupInput = z.infer<typeof signupSchema>
 

@@ -32,3 +32,11 @@ export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || (() => {
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || (() => {
     throw new Error("CLOUDINARY_API_SECRET not set in environment variables");
 })();
+
+export const Twilio_ACCOUNT_SID = process.env.Twilio_ACCOUNT_SID || (() => {
+    throw new Error("Twilio_ACCOUNT_SID not set in environment variables");
+})();
+
+export const Twilio_AUTH_TOKEN = process.env.Twilio_AUTH_TOKEN || (() => {
+    throw new Error("Twilio_AUTH_TOKEN not set in environment variables");
+})();

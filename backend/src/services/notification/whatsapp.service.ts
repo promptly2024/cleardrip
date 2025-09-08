@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 // import { sendWhatsAppMessage } from "@/utils/whatsappUtils";
 import { logger } from "@/lib/logger";
+import { sendWhatsAppMessage } from "@/utils/sendWhatsAppNotification";
 
 export async function sendWhatsAppNotification(userId: string, message: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -15,7 +16,10 @@ export async function sendWhatsAppNotification(userId: string, message: string) 
     }
 
     try {
-        // await sendWhatsAppMessage(user.whatsappNumber, message);
+        await sendWhatsAppMessage({
+            to: user.whatsappNumber,
+            message,
+        });
         logger.info(`WhatsApp notification sent to user ${userId}`);
     } catch (error) {
         logger.error(`Failed to send WhatsApp notification to user ${userId}: ${(error as Error).message}`);
