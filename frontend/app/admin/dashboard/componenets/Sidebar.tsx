@@ -8,6 +8,8 @@ import {
     Settings,
     MessageSquare,
     User,
+    Package,
+    CalendarCheck,
 } from 'lucide-react';
 
 import {
@@ -43,34 +45,6 @@ import { useAuth } from '@/context/AuthContext';
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 
-const navigationItems = [
-    {
-        title: 'Overview',
-        url: '/admin/dashboard',
-        icon: Home,
-    },
-    {
-        title: 'Manage Services and Slots',
-        url: '/admin/dashboard/services',
-        icon: MessageSquare,
-    },
-    {
-        title: 'Manage Products',
-        url: '/admin/dashboard/products',
-        icon: User,
-    },
-    {
-        title: 'Manage Staff',
-        url: '/admin/dashboard/staff',
-        icon: User,
-    },
-    {
-        title: 'Manage Subscription',
-        url: '/admin/dashboard/subscriptions',
-        icon: User,
-    },
-];
-
 export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
@@ -84,24 +58,62 @@ export function AppSidebar() {
         role,
     } = useAuth();
 
-    useEffect(() => {
-        // prefetch all pages already for faster navigation
-        const pagesToPrefetch = [
-            '/admin/dashboard',
-            '/admin/dashboard/services',
-            '/admin/dashboard/products',
-            '/admin/dashboard/staff',
-            '/admin/dashboard/subscription',
+    // Get navigation items based on role
+    const getNavigationItems = () => {
+        const baseItems = [
+            {
+                title: 'Overview',
+                url: '/admin/dashboard',
+                icon: Home,
+            },
+            {
+                title: 'Manage Services and Slots',
+                url: '/admin/dashboard/services',
+                icon: MessageSquare,
+            },
         ];
+
+        // Only show additional items for superadmin
+        if (role === "SUPER_ADMIN" || isSuperAdmin) {
+            return [
+                ...baseItems,
+                {
+                    title: 'Manage Products',
+                    url: '/admin/dashboard/products',
+                    icon: Package,
+                },
+                {
+                    title: 'Manage Staff',
+                    url: '/admin/dashboard/staff',
+                    icon: User,
+                },
+                {
+                    title: 'Manage Subscriptions',
+                    url: '/admin/dashboard/subscriptions',
+                    icon: CalendarCheck,
+                },
+            ];
+        }
+
+        // For regular admin, only return base items
+        return baseItems;
+    };
+
+    const navigationItems = getNavigationItems();
+
+    useEffect(() => {
+        // Prefetch pages based on role
+        const pagesToPrefetch = navigationItems.map(item => item.url);
         pagesToPrefetch.forEach((page) => {
             router.prefetch(page);
         });
-    }, [router]);
+    }, [router, navigationItems]);
 
     const ClearDripLogo = '/cleardrip-logo.png';
 
     const email = loggedInUser?.email;
     const userInitials = loggedInUser?.name || email?.split('@')[0]?.slice(0, 2)?.toUpperCase() || 'ADMIN';
+    
     const handleLogout = async () => {
         try {
             await logout();
@@ -139,7 +151,13 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                    <SidebarGroupLabel>
+                        Navigation
+                        {/* Show role indicator */}
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            {role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
+                        </span>
+                    </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {navigationItems.map((item) => (
@@ -155,44 +173,6 @@ export function AppSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-
-                {/* <SidebarGroup>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <Collapsible className="group/collapsible">
-                                <SidebarMenuItem>
-                                    <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton>
-                                            <Settings />
-                                            <span>Account</span>
-                                            <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                                        </SidebarMenuButton>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <SidebarMenuSub>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton asChild>
-                                                    <a href="/admin/dashboard/profile">
-                                                        <User />
-                                                        <span>Profile</span>
-                                                    </a>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton asChild>
-                                                    <a href="/admin/dashboard/security">
-                                                        <Settings />
-                                                        <span>Security</span>
-                                                    </a>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        </SidebarMenuSub>
-                                    </CollapsibleContent>
-                                </SidebarMenuItem>
-                            </Collapsible>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup> */}
             </SidebarContent>
 
             <SidebarFooter>
@@ -216,6 +196,9 @@ export function AppSidebar() {
                                                 {loggedInUser.name || userInitials}
                                             </span>
                                             <span className="truncate text-xs">{email}</span>
+                                            <span className="truncate text-xs text-muted-foreground">
+                                                {role === "SUPER_ADMIN" ? "Super Administrator" : "Administrator"}
+                                            </span>
                                         </div>
                                         <ChevronDown className="ml-auto size-4" />
                                     </SidebarMenuButton>
@@ -227,18 +210,6 @@ export function AppSidebar() {
                                     align="end"
                                     sideOffset={4}
                                 >
-                                    {/* <DropdownMenuItem asChild>
-                                        <a href="/admin/dashboard/profile">
-                                            <User />
-                                            Profile
-                                        </a>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <a href="/admin/dashboard/settings">
-                                            <Settings />
-                                            Settings
-                                        </a>
-                                    </DropdownMenuItem> */}
                                     <DropdownMenuItem onClick={handleLogout}>
                                         <LogOut />
                                         Log out
