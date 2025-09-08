@@ -3,6 +3,7 @@ import { encryptOtp, compareOtp } from "@/utils/auth";
 import { findUserByEmailOrPhone } from "./user.service";
 import { logger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email/sendEmail";
+import { emailQueue, emailQueueName } from "@/queues/email.queue";
 
 export const generateAndSendOtp = async (phone?: string, email?: string) => {
     if (!phone && !email) {
@@ -22,12 +23,12 @@ export const generateAndSendOtp = async (phone?: string, email?: string) => {
     // TODO: Send OTP via SMS/Email
     console.log(`OTP for ${phone || email}: ${otp}`);
     if (email) {
-        await sendEmail(
-            email,
-            "Your OTP Code",
-            `Your OTP code is ${otp}. It is valid for 5 minutes.`,
-            `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`
-        );
+        emailQueue.add(emailQueueName, {
+            to: email,
+            subject: "Your OTP Code",
+            message: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+            html: `<p>Your OTP code is <strong>${otp}</strong>. It is valid for 5 minutes.</p>`
+        });
     } else {
         // Integrate with SMS service to send OTP
         logger.info(`Send OTP ${otp} to phone ${phone}`);
