@@ -21,12 +21,24 @@ export const sendNotificationHandler = async (request: FastifyRequest, reply: Fa
         return sendError(reply, 400, "Invalid request: userId, type, and payload are required.");
     }
 
+    // Validate notification type
+    const validTypes = ['WHATSAPP', 'FCM', 'EMAIL'];
+    if (!validTypes.includes(type)) {
+        return sendError(reply, 400, `Invalid notification type. Allowed types are: ${validTypes.join(", ")}`);
+    }
+
+    // Validate payload (title is optional for WhatsApp)
+    if (!payload.message) {
+        return sendError(reply, 400, "Invalid request: payload.message is required.");
+    }
+
     // Add the job to the notification queue
     await notificationQueue.add(notificationQueueName, {
         userId,
         type,
         payload
     });
+
     // Update the notification in DB
     const notification = {
         userId,
@@ -38,9 +50,9 @@ export const sendNotificationHandler = async (request: FastifyRequest, reply: Fa
     };
 
     // Save in db
-    await SaveNotification(notification);
+    const savedNotification = await SaveNotification(notification);
 
-    return reply.status(202).send({ message: "Notification job added to the queue" });
+    return reply.status(202).send({ message: "Notification job added to the queue", notification: savedNotification });
 };
 
 export const sendNotificationToAllHandler = async (request: FastifyRequest, reply: FastifyReply) => {
