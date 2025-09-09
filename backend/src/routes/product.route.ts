@@ -1,4 +1,4 @@
-import { createProductHandler, deleteProductHandler, getAllProductsHandler, getProductByIdHandler, updateProductHandler } from "controllers/product.controller"
+import { createProductHandler, deleteProductHandler, getAllProductsHandler, getProductByIdHandler, updateProductHandler } from "@/controllers/product.controller"
 import { FastifyInstance } from "fastify"
 import { requireRole } from "@/middleware/requireRole"
 

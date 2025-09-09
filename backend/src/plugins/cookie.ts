@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import fastifyCookie from '@fastify/cookie'
-import { COOKIE_SECRET } from '@/config/env'
+import { COOKIE_SECRET } from '../config/env'
 import fastifyMultipart from '@fastify/multipart';
 
 export default async function cookiePlugin(app: FastifyInstance) {

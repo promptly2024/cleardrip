@@ -8,7 +8,6 @@ import { sendError } from "@/utils/errorResponse";
 import { generateToken } from "@/utils/jwt";
 import { comparePassword } from "@/utils/hash";
 import { ZodError } from "zod";
-import { sendEmail } from "@/lib/email/sendEmail";
 import { UserSignUpTemplate } from "@/lib/email/template";
 import { emailQueue, emailQueueName } from "@/queues/email.queue";
 

@@ -1,5 +1,5 @@
 "use server";
-import { SMTP_HOST, SMTP_PASSWORD, SMTP_USER, FROM_EMAIL, FROM_NAME } from "@/config/env";
+import { SMTP_HOST, SMTP_PASSWORD, SMTP_USER, FROM_EMAIL, FROM_NAME } from "../../config/env";
 import nodemailer from "nodemailer";
 
 const sendEmail = async (to: string, subject: string, message: string, html: string) => {

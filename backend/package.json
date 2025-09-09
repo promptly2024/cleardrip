@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "seed": "npx ts-node prisma/seed.ts"
+    "start": "node -r tsconfig-paths/register dist/index.js",
+    "seed": "npx ts-node -r tsconfig-paths/register prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,5 +1,5 @@
-import { prisma } from "lib/prisma";
-import { ProductInput } from "schemas/product.schema";
+import { prisma } from "@/lib/prisma";
+import { ProductInput } from "@/schemas/product.schema";
 
 export async function getAllProducts(take: number, skip: number) {
     const products = await prisma.product.findMany({

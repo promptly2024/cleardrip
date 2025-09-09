@@ -1,4 +1,4 @@
-import { prisma } from "lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { ServiceDefinitionInput, ServiceInput, SlotInput } from "@/schemas/services.schema";
 
 export const bookService = async (data: ServiceInput, userId: string) => {

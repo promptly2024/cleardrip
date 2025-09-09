@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { encryptOtp, compareOtp } from "@/utils/auth";
 import { findUserByEmailOrPhone } from "./user.service";
 import { logger } from "@/lib/logger";
-import { sendEmail } from "@/lib/email/sendEmail";
 import { emailQueue, emailQueueName } from "@/queues/email.queue";
 
 export const generateAndSendOtp = async (phone?: string, email?: string) => {

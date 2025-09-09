@@ -1,4 +1,4 @@
-import { PORT } from '@/config/env';
+import { PORT } from './config/env';
 import { buildApp } from './app';
 
 const start = async () => {

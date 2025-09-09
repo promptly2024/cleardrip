@@ -1,5 +1,5 @@
 // utils/sendWhatsAppNotification.ts
-import { Twilio_ACCOUNT_SID, Twilio_AUTH_TOKEN } from "@/config/env";
+import { Twilio_ACCOUNT_SID, Twilio_AUTH_TOKEN } from "../config/env";
 import Twilio from "twilio";
 
 const client = Twilio(Twilio_ACCOUNT_SID, Twilio_AUTH_TOKEN);
