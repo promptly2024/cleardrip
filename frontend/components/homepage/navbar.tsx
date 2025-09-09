@@ -100,7 +100,7 @@ const Navbar: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo Section */}
-                    <div className="flex items-center gap-2 flex-shrink-0 hover:cursor-pointer"
+                    <div className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none"
                         onClick={() => router.push("/")}
                     >
                         <img
@@ -108,7 +108,7 @@ const Navbar: React.FC = () => {
                             alt="Clear Drip Logo"
                             className="w-8 h-8"
                         />
-                        <span className="font-bold text-lg sm:text-xl text-gray-900">
+                        <span className="font-bold text-lg sm:text-xl text-gray-900 cursor-pointer select-none">
                             CLEARDRIP
                         </span>
                     </div>
@@ -158,14 +158,14 @@ const Navbar: React.FC = () => {
                                     )}
                                 </Button>
 
-                                <Button
+                                {/* <Button
                                     variant="ghost"
                                     size="sm"
                                     className="p-2"
                                     aria-label="Grid menu"
                                 >
                                     <Grid3X3 className="w-5 h-5 text-gray-600" />
-                                </Button>
+                                </Button> */}
                             </>
                         )}
                         {/* Authentication Section */}
@@ -226,7 +226,8 @@ const Navbar: React.FC = () => {
                                 href="/user/signup"
                                 className="px-4 py-2 border border-gray-900 rounded-2xl hover:bg-gray-900 hover:text-white transition-colors duration-200 text-gray-900 font-medium"
                             >
-                                Sign Up
+                                    Sign Up
+                                    {/* Get Started */}
                             </Link>
                         )}
                     </div>
