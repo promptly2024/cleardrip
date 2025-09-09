@@ -40,3 +40,21 @@ export const Twilio_ACCOUNT_SID = process.env.Twilio_ACCOUNT_SID || (() => {
 export const Twilio_AUTH_TOKEN = process.env.Twilio_AUTH_TOKEN || (() => {
     throw new Error("Twilio_AUTH_TOKEN not set in environment variables");
 })();
+
+export const SMTP_HOST = process.env.SMTP_HOST || (() => {
+    throw new Error("SMTP_HOST not set in environment variables");
+})();
+
+export const SMTP_USER = process.env.SMTP_USER || (() => {
+    throw new Error("SMTP_USER not set in environment variables");
+})();
+
+export const SMTP_PASSWORD = process.env.SMTP_PASSWORD || (() => {
+    throw new Error("SMTP_PASSWORD not set in environment variables");
+})();
+
+export const FROM_EMAIL = process.env.FROM_EMAIL || (() => {
+    throw new Error("FROM_EMAIL not set in environment variables");
+})();
+
+export const FROM_NAME = process.env.FROM_NAME || 'ClearDrip';

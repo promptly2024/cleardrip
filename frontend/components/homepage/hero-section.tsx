@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { X, AlertCircle, Droplets, Shield, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -79,12 +80,14 @@ const FeatureHighlight: React.FC<{ icon: React.ReactNode; text: string }> = ({ i
 
 export default function HeroSection() {
     const [showTdsAlert, setShowTdsAlert] = useState(true);
+    const router = useRouter();
 
     const handleCloseAlert = () => {
         setShowTdsAlert(false);
     };
 
     const handleBookService = () => {
+        router.push("/services");
         toast.success("Redirecting to book a service...", {
             description: "Please wait while we take you to the booking page."
         });

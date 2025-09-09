@@ -16,9 +16,10 @@ export const notificationWorker = new Worker(
             if (!userId || !type || !payload) {
                 throw new Error("Invalid job data: userId, type, and payload are required");
             }
-            if (type === "push") {
+            if (type === "PUSH") {
                 await sendFCM(userId, payload.title, payload.message);
-            } else if (type === "whatsapp") {
+            } else if (type === "WHATSAPP") {
+                console.log("\n\nSending WhatsApp notification...");
                 await sendWhatsAppNotification(userId, payload.message);
             }
             else {

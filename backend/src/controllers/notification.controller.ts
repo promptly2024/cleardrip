@@ -1,3 +1,5 @@
+import sendEmail from "@/lib/email/sendEmail";
+import { emailQueue, emailQueueName } from "@/queues/email.queue";
 import { notificationQueue, notificationQueueName } from "@/queues/notification.queue";
 import { SaveNotification } from "@/services/notification.service";
 import { getAllUsersId } from "@/services/user.service";
@@ -31,13 +33,28 @@ export const sendNotificationHandler = async (request: FastifyRequest, reply: Fa
     if (!payload.message) {
         return sendError(reply, 400, "Invalid request: payload.message is required.");
     }
+    const responseEmail = await sendEmail(
+        "rohitkuyada@gmail.com",
+        "Test Email from ClearDrip",
+        "This is a test email sent from ClearDrip application.",
+        "<h1>This is a test email sent from ClearDrip application.</h1>"
+    )
 
     // Add the job to the notification queue
-    await notificationQueue.add(notificationQueueName, {
-        userId,
-        type,
-        payload
-    });
+    if (type === "EMAIL") {
+        await emailQueue.add(emailQueueName, {
+            to: userId, // Here userId is actually email
+            subject: payload.title || "Notification",
+            message: payload.message,
+            html: `<p>${payload.message}</p>`
+        });
+    } else {
+        await notificationQueue.add(notificationQueueName, {
+            userId,
+            type,
+            payload
+        });
+    }
 
     // Update the notification in DB
     const notification = {
@@ -52,7 +69,11 @@ export const sendNotificationHandler = async (request: FastifyRequest, reply: Fa
     // Save in db
     const savedNotification = await SaveNotification(notification);
 
-    return reply.status(202).send({ message: "Notification job added to the queue", notification: savedNotification });
+    return reply.status(202).send({
+        responseEmail,
+        message: "Notification job added to the queue",
+        notification: savedNotification
+    });
 };
 
 export const sendNotificationToAllHandler = async (request: FastifyRequest, reply: FastifyReply) => {
