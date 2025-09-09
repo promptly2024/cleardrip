@@ -4,15 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  ChevronLeft, 
-  AlertCircle, 
-  Truck,
-  Shield,
-  RotateCcw,
-  ShoppingCart,
-  Minus,
-  Plus
+import {
+    ChevronLeft,
+    AlertCircle,
+    Truck,
+    Shield,
+    RotateCcw,
+    ShoppingCart,
+    Minus,
+    Plus
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Product } from '@/lib/types/products';
@@ -20,11 +20,12 @@ import { useRouter } from 'next/navigation';
 import { ProductsClass } from '@/lib/httpClient/product';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
+import Footer from '@/components/layout/Footer';
 
 interface ProductDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+    params: Promise<{
+        id: string;
+    }>;
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
@@ -49,10 +50,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             setError(null);
             const productData = await ProductsClass.getProductById(productId);
             setProduct(productData);
-        } 
+        }
         catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load product details');
-        } 
+        }
         finally {
             setLoading(false);
         }
@@ -64,7 +65,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
     const handleAddToCart = () => {
         if (!product) return;
-        
+
         const cartItem = {
             id: product.id,
             name: product.name,
@@ -77,7 +78,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         for (let i = 0; i < quantity; i++) {
             addToCart(cartItem);
         }
-        
+
         toast.success(`Added ${quantity} ${product.name}(s) to cart!`);
     };
 
@@ -192,15 +193,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                                         <span className="text-sm text-gray-500 ml-1">(4.0) • 24 reviews</span>
                                     </div>
                                 </div> */}
-                                
+
                                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
                                     {product.name}
                                 </h1>
-                                
+
                                 <p className="text-gray-600 text-lg mb-6">
                                     {product.description}
                                 </p>
-                                
+
                                 <div className="flex items-baseline gap-3 mb-6">
                                     <div className="text-4xl font-bold text-blue-600">
                                         ₹{Number(product.price).toLocaleString('en-IN')}
@@ -235,18 +236,18 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
                                 {/* Action Buttons */}
                                 <div className="flex gap-4">
-                                    <Button 
+                                    <Button
                                         onClick={handleAddToCart}
-                                        variant="outline" 
-                                        size="lg" 
+                                        variant="outline"
+                                        size="lg"
                                         className="flex-1 h-12 border-gray-300 hover:border-gray-400"
                                     >
                                         <ShoppingCart className="w-5 h-5 mr-2" />
                                         Add to cart
                                     </Button>
-                                    <Button 
+                                    <Button
                                         onClick={handleBuyNow}
-                                        size="lg" 
+                                        size="lg"
                                         className="flex-1 h-12 bg-blue-600 hover:bg-blue-700"
                                     >
                                         Buy now
@@ -295,7 +296,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                                 <TabsTrigger value="specifications">Specifications</TabsTrigger>
                                 <TabsTrigger value="reviews">Reviews</TabsTrigger>
                             </TabsList>
-                            
+
                             <TabsContent value="description" className="mt-8">
                                 <Card className="border-0 shadow-sm">
                                     <CardHeader>
@@ -308,7 +309,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            
+
                             <TabsContent value="specifications" className="mt-8">
                                 <Card className="border-0 shadow-sm">
                                     <CardHeader>
@@ -349,6 +350,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

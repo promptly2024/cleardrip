@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Phone, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { APIURL } from "@/utils/env"
+import Footer from "@/components/layout/Footer"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -194,6 +195,7 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

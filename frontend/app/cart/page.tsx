@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import Footer from '@/components/layout/Footer';
 
 const CartPage: React.FC = () => {
     const {
@@ -66,9 +67,9 @@ const CartPage: React.FC = () => {
                 <p className="text-sm text-gray-500 italic">Add delivery address</p>
             );
         }
-        
+
         const { street, city, state, postalCode, country } = user.address;
-        
+
         return (
             <div className="text-sm text-gray-600 leading-relaxed">
                 <div className="font-medium">{street}</div>
@@ -80,24 +81,24 @@ const CartPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
                 {cartItems.length === 0 ? (
                     /* Empty Cart */
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
                         <div className="w-32 h-32 mb-8 mx-auto">
                             <svg viewBox="0 0 200 150" className="w-full h-full text-blue-500">
-                                <path 
-                                    d="M20 40 L40 40 L50 100 L160 100 L170 40 L60 40" 
-                                    stroke="currentColor" 
-                                    strokeWidth="3" 
+                                <path
+                                    d="M20 40 L40 40 L50 100 L160 100 L170 40 L60 40"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
                                     fill="none"
                                 />
                                 <circle cx="70" cy="120" r="8" fill="currentColor" />
                                 <circle cx="140" cy="120" r="8" fill="currentColor" />
-                                <path 
-                                    d="M60 70 L140 70" 
-                                    stroke="currentColor" 
+                                <path
+                                    d="M60 70 L140 70"
+                                    stroke="currentColor"
                                     strokeWidth="2"
                                 />
                             </svg>
@@ -108,7 +109,7 @@ const CartPage: React.FC = () => {
                         <p className="text-gray-600 mb-8">
                             Browse products, services to begin
                         </p>
-                        <Button 
+                        <Button
                             onClick={() => router.push('/')}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-base"
                         >
@@ -135,8 +136,8 @@ const CartPage: React.FC = () => {
                                                 Expected delivery by {getExpectedDeliveryDate()}
                                             </p>
                                         </div>
-                                        <Button 
-                                            variant="link" 
+                                        <Button
+                                            variant="link"
                                             className="text-blue-600 font-medium hover:text-blue-700"
                                         >
                                             Change
@@ -153,8 +154,8 @@ const CartPage: React.FC = () => {
                                             {/* Product Image */}
                                             <div className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-lg overflow-hidden">
                                                 {item.image ? (
-                                                    <img 
-                                                        src={item.image} 
+                                                    <img
+                                                        src={item.image}
                                                         alt={item.name}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -272,13 +273,13 @@ const CartPage: React.FC = () => {
                                 <h3 className="font-semibold text-gray-900 text-xl mb-6">
                                     Price Details ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} Item{cartItems.reduce((sum, item) => sum + item.quantity, 0) > 1 ? 's' : ''})
                                 </h3>
-                                
+
                                 <div className="space-y-4">
                                     <div className="flex justify-between text-base">
                                         <span className="text-gray-600">Total MRP:</span>
                                         <span className="font-medium">{formatPrice(getTotalMRP())}</span>
                                     </div>
-                                    
+
                                     {getTotalDiscount() > 0 && (
                                         <div className="flex justify-between text-base">
                                             <span className="text-gray-600">Discount on MRP:</span>
@@ -287,7 +288,7 @@ const CartPage: React.FC = () => {
                                             </span>
                                         </div>
                                     )}
-                                    
+
                                     <div className="border-t border-gray-200 pt-4">
                                         <div className="flex justify-between">
                                             <span className="font-semibold text-gray-900 text-lg">Total Amount:</span>
@@ -299,7 +300,7 @@ const CartPage: React.FC = () => {
                                 </div>
 
                                 {/* Place Order Button */}
-                                <Button 
+                                <Button
                                     onClick={handlePlaceOrder}
                                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded-lg mt-6"
                                 >
@@ -310,6 +311,7 @@ const CartPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     );
 };

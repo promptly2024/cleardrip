@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { ProductsClass } from '@/lib/httpClient/product';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
+import Footer from '@/components/layout/Footer';
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -37,11 +38,11 @@ export default function ProductsPage() {
             const data = await ProductsClass.getAllProducts(currentPage, limit);
             setProducts(data.products);
             setTotalProducts(data.total);
-        } 
+        }
         catch (err) {
             setError('Failed to load products. Please try again.');
             console.error('Error loading products:', err);
-        } 
+        }
         finally {
             setLoading(false);
         }
@@ -77,7 +78,7 @@ export default function ProductsPage() {
     const ProductCard = ({ product }: { product: Product }) => (
         <Card className="group h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-0 shadow-md overflow-hidden"
             onClick={() => handleProductClick(product.id)}
-        >    
+        >
             {/* Product Image - Only show if backend provides one */}
             {product.image && (
                 <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
@@ -109,7 +110,7 @@ export default function ProductsPage() {
                     {product.name}
                 </CardTitle>
             </CardHeader>
-            
+
             <CardContent className="flex-1 pb-3">
                 <p className="text-sm text-gray-600 line-clamp-2 mb-4">
                     {product.description}
@@ -122,9 +123,9 @@ export default function ProductsPage() {
             </CardContent>
 
             <CardFooter className="pt-0 flex gap-2">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
+                <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1 border-gray-200 hover:border-gray-300"
                     onClick={(e) => handleAddToCart(product, e)}
                 >
@@ -168,7 +169,7 @@ export default function ProductsPage() {
             <div className="text-sm text-gray-600">
                 Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalProducts)} of {totalProducts} products
             </div>
-            
+
             <div className="flex items-center gap-2">
                 <Button
                     variant="outline"
@@ -179,12 +180,12 @@ export default function ProductsPage() {
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                 </Button>
-                
+
                 <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         const page = i + Math.max(1, currentPage - 2);
                         if (page > totalPages) return null;
-                        
+
                         return (
                             <Button
                                 key={page}
@@ -198,7 +199,7 @@ export default function ProductsPage() {
                         );
                     })}
                 </div>
-                
+
                 <Button
                     variant="outline"
                     size="sm"
@@ -275,8 +276,8 @@ export default function ProductsPage() {
                             {searchTerm ? 'Try adjusting your search terms or browse our categories' : 'No products available at the moment'}
                         </p>
                         {searchTerm && (
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={() => setSearchTerm('')}
                                 className="mt-4"
                             >
@@ -291,6 +292,7 @@ export default function ProductsPage() {
                     <PaginationControls />
                 )}
             </div>
+            <Footer />
         </div>
     );
 }

@@ -25,6 +25,7 @@ import {
   SlidersHorizontal
 } from "lucide-react"
 import Link from "next/link"
+import Footer from "@/components/layout/Footer"
 
 interface Service {
   id: string
@@ -457,6 +458,7 @@ export default function ServicesPage() {
           )}
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

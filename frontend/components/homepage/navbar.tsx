@@ -55,7 +55,7 @@ const Navbar: React.FC = () => {
     useEffect(() => {
         router.prefetch(`/products`);
         router.prefetch(`/services`);
-        router.prefetch(`/pricing`);
+        router.prefetch(`/subscription`);
     }, []);
 
     const handleLogout = async () => {
@@ -366,7 +366,7 @@ const Navbar: React.FC = () => {
                                 Services
                             </NavLink>
                             <NavLink
-                                href="/pricing"
+                                href="/subscription"
                                 className="block px-3 py-2 rounded-md text-base"
                                 onClick={closeMobileMenu}
                             >
