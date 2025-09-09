@@ -123,13 +123,13 @@ export default function ContactSection() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3" onClick={() => window.location.href = 'mailto:support@cleardrip.com'}>
+                                <div className="flex items-center gap-3" onClick={() => window.location.href = 'mailto:cleardrip.solutions@gmail.com'}>
                                     <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                                         <Mail className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
                                         <div className="font-semibold text-gray-900">E-mail</div>
-                                        <div className="text-gray-600 hover:cursor-pointer">Support @cleardrip.com</div>
+                                        <div className="text-gray-600 hover:cursor-pointer">cleardrip.solutions@gmail.com</div>
                                     </div>
                                 </div>
                             </div>

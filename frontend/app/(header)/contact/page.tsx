@@ -149,7 +149,9 @@ export default function ContactPage() {
                 className="w-64 h-64 object-cover rounded-xl mb-6"
               />
               <div className="space-y-6 w-full max-w-xs">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 hover:cursor-pointer"
+                  onClick={() => window.location.href = "tel +919810916388"}
+                >
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                     <Phone className="w-5 h-5 text-white" />
                   </div>
@@ -158,13 +160,15 @@ export default function ContactPage() {
                     <p className="text-gray-600 text-sm">91+ 9810916388</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 cursor-pointer"
+                  onClick={() => window.location.href = "mailto:cleardrip.solutions@gmail.com"}
+                >
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                     <Mail className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 text-base">E-mail</h3>
-                    <p className="text-gray-600 text-sm">Support@cleardrip.com</p>
+                    <p className="text-gray-600 text-sm">cleardrip.solutions@gmail.com</p>
                   </div>
                 </div>
               </div>
@@ -196,6 +200,6 @@ export default function ContactPage() {
         </div>
       </div>
       <Footer />
-    </div>
+    </div >
   )
 }

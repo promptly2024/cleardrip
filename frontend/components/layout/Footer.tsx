@@ -59,10 +59,10 @@ export default function Footer() {
               <span className="text-gray-400">+91 9876543210</span>
             </div>
             <div className="flex items-center space-x-3 hover:cursor-pointer"
-              onClick={() => window.location.href = 'mailto:support@cleardrip.com'}
+              onClick={() => window.location.href = 'mailto:cleardrip.solutions@gmail.com'}
             >
               <Mail className="w-5 h-5 text-blue-500" />
-              <span className="text-gray-400">support@watercare.com</span>
+              <span className="text-gray-400">cleardrip.solutions@gmail.com</span>
             </div>
             <div className="flex items-center space-x-3">
               <MapPin className="w-5 h-5 text-blue-500" />
