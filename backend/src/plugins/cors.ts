@@ -9,9 +9,10 @@ export default async function corsPlugin(app: FastifyInstance) {
                 'http://localhost:3001',
                 'https://cleardrip-main.vercel.app',
                 'https://www.cleardrip.in',
-                'https://cleardrip.in'
+                // 'https://cleardrip.in'
             ];
             if (!origin || allowedOrigins.includes(origin)) {
+                console.log('\n\nCORS Allowed Origin:', origin);
                 callback(null, true);
             } else {
                 console.log('CORS Rejected Origin:', origin);

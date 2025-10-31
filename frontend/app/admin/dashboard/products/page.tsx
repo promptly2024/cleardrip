@@ -236,7 +236,9 @@ export default function AdminProductsPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-grow flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+              title={editingId ? "Update product" : "Create new product"}
+              aria-label={editingId ? "Update product" : "Create product"}
+              className="flex-grow flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-200"
             >
               {loading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
               {editingId ? "Update Product" : "Create Product"}
@@ -255,7 +257,9 @@ export default function AdminProductsPage() {
                     inventory: 0,
                   });
                 }}
-                className="flex-grow flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 border py-3 rounded-lg font-semibold transition"
+                title="Cancel editing"
+                aria-label="Cancel editing"
+                className="flex-grow flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 border py-3 rounded-lg font-semibold transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-200"
               >
                 Cancel
               </button>
@@ -277,11 +281,15 @@ export default function AdminProductsPage() {
           products.map((product) => (
             <div
               key={product.id}
-              className="p-6 bg-white border rounded-lg shadow-sm hover:shadow-md transition flex flex-col"
+              title={product.name}
+              role="group"
+              tabIndex={0}
+              className="p-6 bg-white border rounded-lg shadow-sm hover:shadow-lg hover:scale-[1.02] transition-transform flex flex-col focus:outline-none focus:ring-4 focus:ring-blue-50"
             >
               <img
                 src={product.image || ""}
                 alt={product.name}
+                title={product.name}
                 className="h-40 w-full object-contain mb-4 rounded"
               />
               <div className="flex-1 text-center space-y-1">
@@ -301,13 +309,17 @@ export default function AdminProductsPage() {
               <div className="mt-4 flex justify-center gap-3">
                 <button
                   onClick={() => handleEdit(product)}
-                  className="px-4 py-2 flex items-center gap-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition"
+                  title={`Edit ${product.name}`}
+                  aria-label={`Edit ${product.name}`}
+                  className="px-4 py-2 flex items-center gap-1 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-300 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-200"
                 >
                   <Edit className="w-4 h-4" /> Edit
                 </button>
                 <button
                   onClick={() => handleDelete(product.id)}
-                  className="px-4 py-2 flex items-center gap-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                  title={`Delete ${product.name}`}
+                  aria-label={`Delete ${product.name}`}
+                  className="px-4 py-2 flex items-center gap-1 bg-red-600 text-white rounded-md hover:bg-red-800 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-200"
                 >
                   <Trash2 className="w-4 h-4" /> Delete
                 </button>
@@ -322,7 +334,9 @@ export default function AdminProductsPage() {
         <button
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
-          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition shadow-sm"
+          title="Previous page"
+          aria-label="Previous page"
+          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-200"
         >
           Prev
         </button>
@@ -332,7 +346,9 @@ export default function AdminProductsPage() {
         <button
           disabled={page === totalPage}
           onClick={() => setPage(page + 1)}
-          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition shadow-sm"
+          title="Next page"
+          aria-label="Next page"
+          className="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-200"
         >
           Next
         </button>
