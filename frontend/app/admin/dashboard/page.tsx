@@ -286,7 +286,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <header className="bg-white p-6 rounded-lg border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome, {loggedInUser?.name}</h1>
+            <h2 className="text-lg sm:text-lg font-bold text-gray-900">Welcome {loggedInUser?.name}</h2>
             <p className="text-sm sm:text-base text-gray-600">
               {loggedInUser?.adminRole || role} 
               <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">

@@ -366,11 +366,11 @@ const Navbar: React.FC = () => {
                                 Services
                             </NavLink>
                             <NavLink
-                                href="/subscription"
+                                href="/subscriptions"
                                 className="block px-3 py-2 rounded-md text-base"
                                 onClick={closeMobileMenu}
                             >
-                                Pricing
+                                Subscription
                             </NavLink>
 
                             <div className="border-t border-gray-200 pt-2 mt-2">

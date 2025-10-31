@@ -310,7 +310,7 @@ export default function MyServices() {
                             </Button>
                         )}
 
-                        {['pending', 'scheduled'].includes(service.status.toLowerCase()) && (
+                        {/* {['pending', 'scheduled'].includes(service.status.toLowerCase()) && (
                             <>
                                 <Button
                                     variant="outline"
@@ -331,7 +331,7 @@ export default function MyServices() {
                                     Cancel
                                 </Button>
                             </>
-                        )}
+                        )} */}
                     </div>
 
                     {/* Booking Date */}
@@ -443,7 +443,7 @@ export default function MyServices() {
                                 </Button>
                             )}
 
-                            {['pending', 'scheduled'].includes(selectedService.status.toLowerCase()) && (
+                            {/* {['pending', 'scheduled'].includes(selectedService.status.toLowerCase()) && (
                                 <>
                                     <Button
                                         variant="outline"
@@ -461,12 +461,12 @@ export default function MyServices() {
                                         Cancel Booking
                                     </Button>
                                 </>
-                            )}
+                            )} */}
 
-                            <Button variant="outline" onClick={() => handleDownloadInvoice(selectedService.id)}>
+                            {/* <Button variant="outline" onClick={() => handleDownloadInvoice(selectedService.id)}>
                                 <Download className="w-4 h-4 mr-2" />
                                 Download Invoice
-                            </Button>
+                            </Button> */}
                         </div>
                     </CardContent>
                 </Card>
