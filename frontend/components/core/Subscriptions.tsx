@@ -12,7 +12,6 @@ const iconMap: Record<string, React.ElementType> = {
   Standard: Star,
 };
 
-
 export default function SubscriptionsSection() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -66,7 +65,7 @@ export default function SubscriptionsSection() {
             <Sparkles className="w-4 h-4" />
             Available Subscriptions
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--blue-500)' }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--blue-500)' }} title="Compare subscription plans">
             Choose your plan.
             <br className="hidden sm:block" />
             <span style={{ color: 'var(--blue-900)' }}>We'll handle the rest</span>
@@ -115,6 +114,7 @@ export default function SubscriptionsSection() {
                   <img
                     src="/manspeaking.png"
                     alt="Happy customer testimonial illustration"
+                    title="Happy customer testimonial"
                     className="w-full h-48 lg:h-56 object-contain opacity-90"
                     loading="lazy"
                   />
@@ -163,7 +163,9 @@ export default function SubscriptionsSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="rounded-full px-8 py-6 text-lg border-2"
+                title="Contact our sales team"
+                aria-label="Contact Sales"
+                className="rounded-full px-8 py-6 text-lg border-2 contact-btn cursor-pointer"
                 style={{ borderColor: 'var(--blue-600)', color: 'var(--blue-600)' }}
               >
                 Contact Sales
@@ -171,7 +173,9 @@ export default function SubscriptionsSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="rounded-full px-8 py-6 text-lg"
+                title="View frequently asked questions"
+                aria-label="View FAQ"
+                className="rounded-full px-8 py-6 text-lg faq-btn cursor-pointer"
               >
                 View FAQ
               </Button>
@@ -197,11 +201,17 @@ function PricingCard({
 }) {
   return (
     <div
-      className={`relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 border-2 group ${
+      // add pricing-card class, keyboard support, title and role for accessibility
+      className={`pricing-card relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 border-2 group ${
         plan.popular
           ? 'ring-4 scale-105 lg:scale-110'
           : 'hover:border-blue-300'
       }`}
+      title={`${plan.name} — ${plan.description}`}
+      role="region"
+      aria-label={`${plan.name} plan`}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') onSubscribe(); }}
       style={{
         borderColor: plan.popular ? 'var(--blue-500)' : 'var(--white-400)',
         animationDelay: `${index * 200}ms`,
@@ -210,7 +220,7 @@ function PricingCard({
     >
       {/* Popular Badge */}
       {plan.popular && (
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2" title="Most popular plan">
           <div className="text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg flex items-center gap-2" style={{ background: 'linear-gradient(to right, var(--blue-600), var(--blue-700))' }}>
             <Star className="w-4 h-4 fill-current" />
             Most Popular
@@ -220,7 +230,7 @@ function PricingCard({
 
       {/* Savings Badge */}
       {plan.savings && (
-        <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold transform rotate-12">
+        <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold transform rotate-12" title={`Savings: ${plan.savings}`}>
           {plan.savings}
         </div>
       )}
@@ -228,7 +238,7 @@ function PricingCard({
       {/* Plan Header */}
       <div className="text-center mb-8">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }}>
-          <IconComponent className="w-8 h-8 text-white" />
+          <IconComponent className="w-8 h-8 text-white" aria-hidden="true" title={`${plan.name} icon`} />
         </div>
 
         <h3 className="text-2xl lg:text-3xl font-bold mb-2" style={{ color: 'var(--blue-900)' }}>
@@ -267,7 +277,9 @@ function PricingCard({
       {/* CTA Button */}
       <Button
         onClick={onSubscribe}
-        className="w-full py-6 text-lg font-semibold rounded-2xl transition-all duration-300 group text-white shadow-lg hover:shadow-xl"
+        title={`Subscribe to ${plan.name}`}
+        aria-label={`Subscribe to ${plan.name}`}
+        className="subscribe-btn w-full py-6 text-lg font-semibold rounded-2xl transition-all duration-300 group text-white shadow-lg hover:shadow-xl cursor-pointer"
         style={{ backgroundColor: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }}
       >
         Subscribe
@@ -295,6 +307,50 @@ const styles = `
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.pricing-card {
+  cursor: pointer;
+  will-change: transform, box-shadow, border-color;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+.pricing-card:focus {
+  outline: none;
+  box-shadow: 0 8px 24px rgba(13,60,100,0.12), 0 0 0 6px rgba(59,130,246,0.08);
+  transform: translateY(-6px) scale(1.01);
+  border-color: var(--blue-600);
+}
+.pricing-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(13,60,100,0.12);
+  border-color: var(--blue-600);
+}
+
+/* Subscribe button hover/focus for stronger contrast */
+.subscribe-btn {
+  transition: filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.subscribe-btn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+.subscribe-btn:focus {
+  outline: none;
+  box-shadow: 0 8px 20px rgba(59,130,246,0.12), 0 0 0 6px rgba(59,130,246,0.08);
+}
+
+/* CTA buttons */
+.contact-btn, .faq-btn {
+  transition: background-color .15s ease, transform .15s ease;
+}
+.contact-btn:hover, .faq-btn:hover {
+  filter: brightness(0.98);
+  transform: translateY(-2px);
+}
+
+/* Ensure icons don't capture pointer */
+.pricing-card svg {
+  pointer-events: none;
 }
 `;
 
