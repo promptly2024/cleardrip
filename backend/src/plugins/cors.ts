@@ -9,8 +9,6 @@ export default async function corsPlugin(app: FastifyInstance) {
                 'http://localhost:3001',
                 'https://cleardrip-main.vercel.app',
                 'https://www.cleardrip.in',
-                'https://www.cleardrip.in/',
-                'https://cleardrip.in/',
                 'https://cleardrip.in'
             ];
             if (!origin || allowedOrigins.includes(origin)) {
