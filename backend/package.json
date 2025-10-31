@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/index.ts",
-    "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/index.js",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
     "seed": "npx ts-node -r tsconfig-paths/register prisma/seed.ts"
   },
   "keywords": [],
@@ -43,6 +43,7 @@
     "nodemon": "^3.1.10",
     "prisma": "^6.11.1",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.8.3"
   }
 }
