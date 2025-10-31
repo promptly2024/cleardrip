@@ -4,13 +4,15 @@ import cors from '@fastify/cors'
 export default async function corsPlugin(app: FastifyInstance) {
     await app.register(cors, {
         origin: (origin, callback) => {
-            const allowedOrigins = ['http://localhost:3000',
+            const allowedOrigins = [
+                'http://localhost:3000',
                 'http://localhost:3001',
                 'https://cleardrip-main.vercel.app',
                 'https://www.cleardrip.in',
                 'https://www.cleardrip.in/',
                 'https://cleardrip.in/',
-                'https://cleardrip.in'];
+                'https://cleardrip.in'
+            ];
             if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
