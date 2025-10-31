@@ -8,6 +8,7 @@ export default async function corsPlugin(app: FastifyInstance) {
             if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
+                console.log('CORS Rejected Origin:', origin);
                 callback(new Error('Not allowed by CORS'), false);
             }
         },

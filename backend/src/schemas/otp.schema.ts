@@ -1,7 +1,5 @@
 import { z } from "zod"
 
-/* --------------------------- OTP SCHEMAS --------------------------- */
-
 export const requestOtpSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email().optional(),
