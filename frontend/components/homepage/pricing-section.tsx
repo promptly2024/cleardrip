@@ -71,6 +71,13 @@ export default function PricingSection() {
       console.error("Subscription failed:", error);
     }
   };
+  
+  const handleViewFAQ = () => {
+    const faqSection = document.getElementById('faq-section');
+    if (faqSection) {
+      faqSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <section className="py-12 sm:py-16 lg:py-24 px-4" style={{ background: 'linear-gradient(to bottom right, var(--white-50), var(--blue-50), var(--white-100))' }}>
@@ -185,7 +192,8 @@ export default function PricingSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="rounded-full px-8 py-6 text-lg"
+                className="rounded-full px-8 py-6 text-lg cursor-pointer"
+                onClick={handleViewFAQ}
               >
                 View FAQ
               </Button>

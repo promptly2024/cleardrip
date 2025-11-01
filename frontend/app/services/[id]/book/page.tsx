@@ -347,6 +347,10 @@ export default function ServiceBookingPage() {
                         src={service.image}
                         alt={service.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://sewamitra.up.gov.in/Upload/Service/ff974f11-4215-4b41-bb63-87f2cb358a46_.jpg";
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

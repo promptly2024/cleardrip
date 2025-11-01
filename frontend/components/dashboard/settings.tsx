@@ -35,17 +35,17 @@ const SettingsPage = () => {
                 <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
                   Get instant replies, book services, and chat with your RO assistant anytime
                 </p>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
-                >
-                  Chat now
-                </Button>
+                <a href="https://wa.me/1234567890">
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
+                  >
+                    Chat now
+                  </Button>
+                </a>
               </CardContent>
             </Card>
 
-            {/* Customer Support */}
             <Card className="border border-gray-200 hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
@@ -61,13 +61,14 @@ const SettingsPage = () => {
                 <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
                   Connect directly with our team for quick help or urgent concerns.
                 </p>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
-                >
-                  Call now
-                </Button>
+                <a href="tel:9311868256">
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
+                  >
+                    Call now
+                  </Button>
+                </a>
               </CardContent>
             </Card>
 
@@ -87,13 +88,14 @@ const SettingsPage = () => {
                 <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
                   Send us your feedback or detailed queries—we're listening.
                 </p>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
-                >
-                  Send mail
-                </Button>
+                <a href="mailto:cleardrip.solutions@gmail.com">
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto px-6 py-2 border-gray-300 hover:bg-gray-50 cursor-pointer"
+                  >
+                    Send mail
+                  </Button>
+                </a>
               </CardContent>
             </Card>
           </div>
