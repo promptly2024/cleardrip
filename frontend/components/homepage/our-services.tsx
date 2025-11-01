@@ -22,6 +22,7 @@ export default function OurServices() {
   const [services, setServices] = React.useState<Service[]>([])
   const [loading, setLoading] = React.useState<boolean>(true)
   const [error, setError] = React.useState<string | null>(null)
+  const router = useRouter();
 
   React.useEffect(() => {
     const fetchServices = async () => {
@@ -100,7 +101,10 @@ export default function OurServices() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 size="lg"
-                className="w-full sm:w-auto rounded-full px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                className="w-full sm:w-auto rounded-full px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                onClick={() => {
+                  router.push('/services')
+                }}
               >
                 Schedule Now
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
