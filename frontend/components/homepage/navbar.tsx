@@ -389,15 +389,6 @@ const Navbar: React.FC = () => {
                                             </span>
                                         )}
                                     </Button>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="p-2"
-                                        aria-label="Grid menu"
-                                    >
-                                        <Grid3X3 className="w-5 h-5 text-gray-600" />
-                                    </Button>
                                 </div>
                             </div>
                         </div>

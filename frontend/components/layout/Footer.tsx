@@ -6,12 +6,11 @@ export default function Footer() {
     <div className="container mx-auto px-4">
       <div className="grid md:grid-cols-4 gap-8">
         <div>
-          <Link href="/" className="flex items-center space-x-2 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-              <Droplets className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold cursor-pointer select-none">Watercare</span>
-          </Link>
+            <img src="/cleardrip-logo.png" alt="cleardriplogo"
+              className="cursor-pointer mb-6"
+              height={70}
+              width={70}
+            />
           <p className="text-gray-400 mb-6">
             Your trusted partner for smart water health monitoring and RO services.
           </p>

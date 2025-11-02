@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Star, Sparkles, Crown, Shield } from "lucide-react";
 import { SubscriptionClass } from "@/lib/httpClient/subscription";
+import { useRouter } from "next/navigation";
 
 // Icon assignment logic based on plan name
 const iconMap: Record<string, React.ElementType> = {
@@ -29,6 +30,7 @@ export default function PricingSection() {
   const [plans, setPlans] = useState<Plans[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchPlans() {
@@ -184,8 +186,11 @@ export default function PricingSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="rounded-full px-8 py-6 text-lg border-2"
+                className="rounded-full px-8 py-6 text-lg border-2 cursor-pointer"
                 style={{ borderColor: 'var(--blue-600)', color: 'var(--blue-600)' }}
+                onClick={() => {
+                  router.push('/contact')
+                }}
               >
                 Contact Sales
               </Button>
