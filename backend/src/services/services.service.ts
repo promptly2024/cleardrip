@@ -227,3 +227,146 @@ export const deleteSlot = async (ids: string[]) => {
         notDeleted: bookedSlotIds,
     };
 };
+
+export const rescheduleService = async (bookingId: string, newSlotId: string, userId: string) => {
+    return await prisma.$transaction(async (tx) => {
+        // 1. Verify booking exists and belongs to user
+        const booking = await tx.serviceBooking.findUnique({
+            where: { id: bookingId },
+            include: { slot: true, service: true }
+        });
+
+        if (!booking) {
+            throw new Error("Booking not found");
+        }
+
+        if (booking.userId !== userId) {
+            throw new Error("Unauthorized: This booking does not belong to you");
+        }
+
+        // 2. Check if booking can be rescheduled
+        if (booking.status === "COMPLETED" || booking.status === "CANCELLED") {
+            throw new Error(`Cannot reschedule a ${booking.status.toLowerCase()} booking`);
+        }
+
+        // 3. Verify new slot exists and is available
+        const newSlot = await tx.slot.findUnique({
+            where: { id: newSlotId },
+            include: {
+                bookings: {
+                    where: {
+                        status: {
+                            in: ["PENDING", "SCHEDULED", "IN_PROGRESS"]
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!newSlot) {
+            throw new Error("Selected slot not found");
+        }
+
+        // Check if slot is in the future
+        if (new Date(newSlot.startTime) < new Date()) {
+            throw new Error("Cannot reschedule to a past time slot");
+        }
+
+        if (newSlot.bookings.length > 0) {
+            throw new Error("Selected slot is already booked");
+        }
+
+        // 4. Cannot reschedule to the same slot
+        if (booking.slotId === newSlotId) {
+            throw new Error("Cannot reschedule to the same slot");
+        }
+
+        // 5. Update the booking
+        const updatedBooking = await tx.serviceBooking.update({
+            where: { id: bookingId },
+            data: {
+                slotId: newSlotId,
+                status: "SCHEDULED",
+                updatedAt: new Date()
+            },
+            include: {
+                slot: true,
+                service: true,
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true
+                    }
+                }
+            }
+        });
+
+        return updatedBooking;
+    }, {
+        timeout: 15000, 
+        maxWait: 10000 
+    });
+};
+
+export const cancelService = async (bookingId: string, userId: string, reason?: string) => {
+    return await prisma.$transaction(async (tx) => {
+        // 1. Verify booking exists and belongs to user
+        const booking = await tx.serviceBooking.findUnique({
+            where: { id: bookingId },
+            include: { slot: true, service: true }
+        });
+
+        if (!booking) {
+            throw new Error("Booking not found");
+        }
+
+        if (booking.userId !== userId) {
+            throw new Error("Unauthorized: This booking does not belong to you");
+        }
+
+        // 2. Check if booking can be cancelled
+        if (booking.status === "COMPLETED") {
+            throw new Error("Cannot cancel a completed booking");
+        }
+
+        if (booking.status === "CANCELLED") {
+            throw new Error("Booking is already cancelled");
+        }
+
+        // 3. Optional: Check cancellation window
+        const slotStartTime = new Date(booking.slot.startTime);
+        const now = new Date();
+        const hoursUntilService = (slotStartTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        // if you want to enforce 24hrs cancellation policy, uncomment this
+        // if (hoursUntilService < 24) {
+        //     throw new Error("Cannot cancel booking less than 24 hours before scheduled time");
+        // }
+
+        // 4. Update the booking status to CANCELLED
+        const cancelledBooking = await tx.serviceBooking.update({
+            where: { id: bookingId },
+            data: {
+                status: "CANCELLED",
+                updatedAt: new Date()
+            },
+            include: {
+                slot: true,
+                service: true,
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true
+                    }
+                }
+            }
+        });
+
+        return cancelledBooking;
+    }, {
+        timeout: 15000, 
+        maxWait: 10000 
+    });
+};

@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify"
 import { requireRole } from "@/middleware/requireRole"
-import { AddServiceHandler, AddSlotHandler, BookServiceHandler, DeleteServiceHandler, DeleteSlotHandler, getAllPublicServices, GetAllServicesHandler, GetAllSlotsHandler, GetServiceByIdHandler, GetServiceSlotsAvailableHandler, UpdateStatusHandler } from "@/controllers/services.controller"
+import { AddServiceHandler, AddSlotHandler, BookServiceHandler, CancelServiceHandler, DeleteServiceHandler, DeleteSlotHandler, getAllPublicServices, GetAllServicesHandler, GetAllSlotsHandler, GetServiceByIdHandler, GetServiceSlotsAvailableHandler, RescheduleServiceHandler, UpdateStatusHandler } from "@/controllers/services.controller"
 import { uploadImage } from "@/controllers/uploadController"
 import { AdminDashboardOverviewHandler } from "@/controllers/auth/auth.admin.controller"
 
@@ -17,6 +17,9 @@ export default async function servicesRoutes(fastify: FastifyInstance) {
     fastify.post("/services/add/slots", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, AddSlotHandler);
     fastify.delete("/services/delete/slots", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, DeleteSlotHandler);
     fastify.post("/upload/image", { preHandler: requireRole(["ADMIN", "SUPER_ADMIN"]) }, uploadImage);
+
+    fastify.put("/services/bookings/:id/reschedule", { preHandler: requireRole(["USER"]) }, RescheduleServiceHandler);
+    fastify.put("/services/bookings/:id/cancel", { preHandler: requireRole(["USER"]) }, CancelServiceHandler);
 
     fastify.get("/admin/dashboard/stats",  AdminDashboardOverviewHandler)
 

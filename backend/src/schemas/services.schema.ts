@@ -35,3 +35,11 @@ export const slotSchema = z.array(z.object({
 }));
 
 export type SlotInput = z.infer<typeof slotSchema>;
+
+export const rescheduleSchema = z.object({
+    slotId: z.string().uuid("Invalid slot ID format")
+});
+
+export const cancelSchema = z.object({
+    reason: z.string().optional()
+});

@@ -144,4 +144,93 @@ export class ServicesClass {
             throw error;
         }
     }
+
+    static async rescheduleService(bookingId: string, slotId: string) {
+        try {
+            const response = await fetch(
+                `${APIURL}/services/bookings/${bookingId}/reschedule`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ slotId })
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || 
+                    result.error || 
+                    'Failed to reschedule service'
+                );
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error rescheduling service:', error);
+            throw error;
+        }
+    }
+
+    static async cancelService(bookingId: string, reason?: string) {
+        try {
+            const response = await fetch(
+                `${APIURL}/services/bookings/${bookingId}/cancel`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ reason })
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || 
+                    result.error || 
+                    'Failed to cancel service'
+                );
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error cancelling service:', error);
+            throw error;
+        }
+    }
+
+    static async getAvailableSlots() {
+        try {
+            const response = await fetch(`${APIURL}/services/slots`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || 
+                    result.error || 
+                    'Failed to fetch available slots'
+                );
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error fetching available slots:', error);
+            throw error;
+        }
+    }
 }
