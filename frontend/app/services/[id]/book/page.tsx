@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Upload, Clock, Star, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload, Clock, Star, CheckCircle, Trash } from 'lucide-react';
 import { APIURL } from '@/utils/env';
 import { toast } from 'sonner';
 import { useRouter, useParams } from 'next/navigation';
@@ -476,16 +476,30 @@ export default function ServiceBookingPage() {
                     )}
                   </div>
                   {imageFile && (
-                    <Button
-                      className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      <Upload className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute bottom-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-full p-2"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setImageFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        aria-label="Remove image"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
