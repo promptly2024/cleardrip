@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BarChart3, Droplet, FileText, Bell, User, Settings, LogOut
+  BarChart3, Droplet, FileText, Bell, User, Settings, LogOut, Menu, X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -30,12 +30,31 @@ const WaterCareDashboard = () => {
   const router = useRouter();
 
   const [view, setView] = useState<ViewType>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!authenticated || !isUser)) {
       router.push('/user/signin');
     }
   }, [authenticated, isUser, authLoading, router]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleNavClick = (id: ViewType) => {
+    setView(id);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -50,7 +69,7 @@ const WaterCareDashboard = () => {
       case 'services':
         return <MyServices />
       case 'tds':
-        return <Card><CardHeader><CardTitle>Water TDS</CardTitle></CardHeader><CardContent><p>Live water TDS .</p></CardContent></Card>;
+        return <Card><CardHeader><CardTitle>Water TDS</CardTitle></CardHeader><CardContent><p>Live water TDS.</p></CardContent></Card>;
       case 'bills':
         return <Card><CardHeader><CardTitle>Billing</CardTitle></CardHeader><CardContent><p>View your bills and payment history.</p></CardContent></Card>;
       case 'alerts':
@@ -64,27 +83,75 @@ const WaterCareDashboard = () => {
     }
   };
 
-  if (authLoading) return <p>Loading...</p>;
+  if (authLoading) return <p className="flex items-center justify-center h-screen">Loading...</p>;
 
   return (
-    <div className="flex h-screen">
-      <nav className="w-64 bg-gray-100 p-4 flex flex-col">
-        <div className="mb-6 font-bold text-xl">WaterCare Dashboard</div>
-        <ul className="flex-grow">
+    <div className="flex h-screen bg-white overflow-hidden">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-transparent bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <nav
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-100 p-4 flex flex-col transition-transform duration-300 ease-in-out transform ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="mb-6 font-bold text-lg sm:text-xl md:text-xl flex justify-between items-center">
+          <span className="truncate">WaterCare</span>
+          <button
+            className="md:hidden text-gray-700 hover:text-gray-900"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <ul className="flex-grow space-y-1 overflow-y-auto">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-            <li key={id} className={`mb-2 cursor-pointer flex items-center p-2 rounded ${view === id ? 'bg-blue-500 text-white' : 'hover:bg-blue-100'}`} onClick={() => setView(id)}>
-              <Icon className="mr-2" size={18} />
-              {label}
+            <li key={id}>
+              <button
+                onClick={() => handleNavClick(id)}
+                className={`w-full flex items-center px-3 py-2 rounded-md text-sm md:text-base transition-colors ${
+                  view === id
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-700 hover:bg-blue-100'
+                }`}
+              >
+                <Icon className="mr-3 flex-shrink-0" size={18} />
+                <span className="truncate">{label}</span>
+              </button>
             </li>
           ))}
         </ul>
-        <Button variant="ghost" onClick={handleLogout} className="flex items-center mt-auto text-red-600">
-          <LogOut className="mr-2" size={18} /> Logout
+
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full flex items-center justify-start text-red-600 hover:text-red-700 hover:bg-red-50 text-sm md:text-base"
+        >
+          <LogOut className="mr-3 flex-shrink-0" size={18} />
+          <span>Logout</span>
         </Button>
       </nav>
-      <main className="flex-1 p-6 overflow-auto bg-white">
-        {renderView()}
-      </main>
+
+      <div className="flex flex-col flex-1 w-full overflow-hidden">
+        <div className="md:hidden flex items-center justify-between bg-gray-100 p-4 border-b border-gray-200">
+          <button
+            className="text-gray-700 hover:text-gray-900"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
+          <div className="w-6" />
+        </div>
+
+        <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 bg-white">
+          {renderView()}
+        </main>
+      </div>
     </div>
   );
 };

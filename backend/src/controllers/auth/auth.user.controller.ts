@@ -27,7 +27,7 @@ export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) =>
 
         if (user.email) {
             // Send welcome email using the email queue
-            await emailQueue.add(emailQueueName, {
+            emailQueue.add(emailQueueName, {
                 to: user.email,
                 subject: "Welcome to ClearDrip!",
                 message: `Hello ${user.name}, welcome to ClearDrip!`,

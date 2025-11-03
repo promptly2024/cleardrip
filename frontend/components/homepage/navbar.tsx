@@ -366,11 +366,11 @@ const Navbar: React.FC = () => {
                                 Services
                             </NavLink>
                             <NavLink
-                                href="/subscription"
+                                href="/subscriptions"
                                 className="block px-3 py-2 rounded-md text-base"
                                 onClick={closeMobileMenu}
                             >
-                                Pricing
+                                Subscription
                             </NavLink>
 
                             <div className="border-t border-gray-200 pt-2 mt-2">
@@ -388,15 +388,6 @@ const Navbar: React.FC = () => {
                                                 {cartCount > 9 ? '9+' : cartCount}
                                             </span>
                                         )}
-                                    </Button>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="p-2"
-                                        aria-label="Grid menu"
-                                    >
-                                        <Grid3X3 className="w-5 h-5 text-gray-600" />
                                     </Button>
                                 </div>
                             </div>

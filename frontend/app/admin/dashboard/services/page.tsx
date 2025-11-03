@@ -24,6 +24,7 @@ import {
     TrendingUp,
     Settings,
     BarChart3,
+    Menu,
 } from "lucide-react"
 
 interface ServiceDefinition {
@@ -85,6 +86,7 @@ const ImprovedAdminServices = () => {
     const [loading, setLoading] = useState(false)
     const [slotsLoading, setSlotsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     // Data states
     const [services, setServices] = useState<ServiceDefinition[]>([])
@@ -163,7 +165,6 @@ const ImprovedAdminServices = () => {
             const data = await response.json()
             if (response.ok) {
                 setSlots(data.slots || [])
-                // Calculate booking stats
                 const totalBookings = data.slots?.reduce((acc: number, slot: Slot) => acc + slot.bookingCount, 0) || 0
                 const upcomingBookings =
                     data.slots?.filter((slot: Slot) => new Date(slot.startTime) > new Date() && slot.bookingCount > 0).length || 0
@@ -222,7 +223,7 @@ const ImprovedAdminServices = () => {
             return
         }
         if (endDate < startDate) {
-            toast.error("End date cannot be in the past")
+            toast.error("End date cannot be before start date")
             return
         }
 
@@ -253,7 +254,6 @@ const ImprovedAdminServices = () => {
                 }
             }
 
-            // for (const slot of slotsToCreate) {
             try {
                 const response = await fetch(`${APIURL}/services/add/slots`, {
                     method: "POST",
@@ -262,14 +262,12 @@ const ImprovedAdminServices = () => {
                     headers: { "Content-Type": "application/json" },
                 })
                 if (response.ok) {
-                    const data = await response.json();
+                    const data = await response.json()
                     toast.success(`Successfully created ${data.slot} slots!`)
                 }
             } catch (error) {
                 console.error("Failed to create slot:", error)
             }
-            // }
-
 
             fetchSlots()
             setIsSlotManagerOpen(false)
@@ -299,7 +297,7 @@ const ImprovedAdminServices = () => {
             const imageresponse = await fetch(`${APIURL}/upload/image`, {
                 method: "POST",
                 credentials: "include",
-                body: imageFormData
+                body: imageFormData,
             })
             if (!imageresponse.ok) {
                 const errorData = await imageresponse.json()
@@ -307,12 +305,12 @@ const ImprovedAdminServices = () => {
                     description: JSON.stringify(errorData),
                     action: {
                         label: "Retry",
-                        onClick: () => addService()
-                    }
+                        onClick: () => addService(),
+                    },
                 })
                 throw new Error("Image upload failed")
             }
-            const { data } = await imageresponse.json();
+            const { data } = await imageresponse.json()
 
             const response = await fetch(`${APIURL}/services/add`, {
                 method: "POST",
@@ -324,7 +322,7 @@ const ImprovedAdminServices = () => {
                     price,
                     duration,
                     isActive,
-                    image: data.url
+                    image: data.url,
                 }),
                 headers: { "Content-Type": "application/json" },
             })
@@ -343,9 +341,9 @@ const ImprovedAdminServices = () => {
                 description: error.message,
                 action: {
                     label: "Try Again",
-                    onClick: addService
-                }
-            });
+                    onClick: addService,
+                },
+            })
         } finally {
             setLoading(false)
         }
@@ -372,7 +370,7 @@ const ImprovedAdminServices = () => {
                 toast.success(message, {
                     description: notDeletedSlot.length > 0 ? `${notDeletedSlot.length} slots could not be deleted as they are booked.` : "",
                 })
-                setSelectedSlotIds(notDeletedSlot.map((s: any) => s.id));
+                setSelectedSlotIds(notDeletedSlot.map((s: any) => s.id))
                 fetchSlots()
             } else {
                 toast.error("Failed to delete slots")
@@ -435,145 +433,151 @@ const ImprovedAdminServices = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        {/* <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1> */}
-                        <p className="text-gray-600">Manage your services, slots, and bookings</p>
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="hidden lg:block flex-1">
+                            <p className="text-xs sm:text-sm text-gray-600 truncate">Manage your services, slots, and bookings</p>
+                        </div>
+
+                        <div className="flex gap-2 sm:gap-3">
+                            <button
+                                onClick={() => setIsSlotManagerOpen(true)}
+                                className="flex items-center px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
+                            >
+                                <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Slot Manager</span>
+                            </button>
+                            <button
+                                onClick={() => setIsAddServiceModalOpen(true)}
+                                className="flex items-center px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-sm"
+                            >
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Add Service</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setIsSlotManagerOpen(true)}
-                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <CalendarDays className="w-4 h-4 mr-2" />
-                            Slot Manager
-                        </button>
-                        <button
-                            onClick={() => setIsAddServiceModalOpen(true)}
-                            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Service
-                        </button>
-                    </div>
+                </div>
+
+                {/* Navigation Tabs */}
+                <div className="overflow-x-auto hide-scrollbar">
+                    <nav className="flex space-x-4 sm:space-x-8 px-3 sm:px-4 md:px-6 min-w-max">
+                        {[
+                            { id: "overview", label: "Overview", icon: BarChart3 },
+                            { id: "services", label: "Services", icon: Settings },
+                            { id: "slots", label: "Time Slots", icon: Calendar },
+                            { id: "bookings", label: "Bookings", icon: Users },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    setActiveTab(tab.id as any)
+                                    setMobileMenuOpen(false)
+                                }}
+                                className={`flex items-center py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                                    activeTab === tab.id
+                                        ? "border-blue-500 text-blue-600"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                }`}
+                            >
+                                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="bg-white border-b border-gray-200 px-6">
-                <nav className="flex space-x-8">
-                    {[
-                        { id: "overview", label: "Overview", icon: BarChart3 },
-                        { id: "services", label: "Services", icon: Settings },
-                        { id: "slots", label: "Time Slots", icon: Calendar },
-                        { id: "bookings", label: "Bookings", icon: Users },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                }`}
-                        >
-                            <tab.icon className="w-4 h-4 mr-2" />
-                            {tab.label}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            <div className="p-6">
+            <div className="p-3 sm:p-4 md:p-6">
                 {/* Overview Tab */}
                 {activeTab === "overview" && (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                                 <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Services</p>
-                                        <p className="text-3xl font-bold text-gray-900">{services.length}</p>
-                                        <p className="text-sm text-green-600 mt-1">{services.filter((s) => s.isActive).length} active</p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Services</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{services.length}</p>
+                                        <p className="text-xs sm:text-sm text-green-600 mt-1">{services.filter((s) => s.isActive).length} active</p>
                                     </div>
-                                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <Settings className="w-6 h-6 text-blue-600" />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                                        <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                                 <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Available Slots</p>
-                                        <p className="text-3xl font-bold text-gray-900">{availableSlots.length}</p>
-                                        <p className="text-sm text-blue-600 mt-1">{upcomingSlots.length} upcoming</p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Available Slots</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{availableSlots.length}</p>
+                                        <p className="text-xs sm:text-sm text-blue-600 mt-1">{upcomingSlots.length} upcoming</p>
                                     </div>
-                                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <Calendar className="w-6 h-6 text-green-600" />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                                 <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                                        <p className="text-3xl font-bold text-gray-900">{bookingStats.totalBookings}</p>
-                                        <p className="text-sm text-orange-600 mt-1">{bookingStats.upcomingBookings} upcoming</p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Bookings</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{bookingStats.totalBookings}</p>
+                                        <p className="text-xs sm:text-sm text-orange-600 mt-1">{bookingStats.upcomingBookings} upcoming</p>
                                     </div>
-                                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                        <Users className="w-6 h-6 text-orange-600" />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                                        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                                 <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Revenue</p>
-                                        <p className="text-3xl font-bold text-gray-900">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Revenue</p>
+                                        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-1 truncate">
                                             ₹{services.reduce((acc, service) => acc + service.price, 0).toLocaleString()}
                                         </p>
-                                        <p className="text-sm text-purple-600 mt-1">Total potential</p>
+                                        <p className="text-xs sm:text-sm text-purple-600 mt-1">Total potential</p>
                                     </div>
-                                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                        <TrendingUp className="w-6 h-6 text-purple-600" />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                                        <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 <button
                                     onClick={() => setIsSlotManagerOpen(true)}
-                                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                                    className="p-3 sm:p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
                                 >
-                                    <CalendarDays className="w-8 h-8 text-blue-600 mb-2" />
-                                    <h4 className="font-medium text-gray-900">Bulk Add Slots</h4>
-                                    <p className="text-sm text-gray-600">Add multiple slots for upcoming days</p>
+                                    <CalendarDays className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2" />
+                                    <h4 className="font-medium text-sm sm:text-base text-gray-900">Bulk Add Slots</h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Add multiple slots for upcoming days</p>
                                 </button>
 
                                 <button
                                     onClick={() => setActiveTab("bookings")}
-                                    className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
+                                    className="p-3 sm:p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
                                 >
-                                    <Users className="w-8 h-8 text-green-600 mb-2" />
-                                    <h4 className="font-medium text-gray-900">View Bookings</h4>
-                                    <p className="text-sm text-gray-600">Check upcoming appointments</p>
+                                    <Users className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mb-2" />
+                                    <h4 className="font-medium text-sm sm:text-base text-gray-900">View Bookings</h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Check upcoming appointments</p>
                                 </button>
 
                                 <button
                                     onClick={() => setIsAddServiceModalOpen(true)}
-                                    className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors text-left"
+                                    className="p-3 sm:p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors text-left"
                                 >
-                                    <Plus className="w-8 h-8 text-purple-600 mb-2" />
-                                    <h4 className="font-medium text-gray-900">Add Service</h4>
-                                    <p className="text-sm text-gray-600">Create a new service offering</p>
+                                    <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mb-2" />
+                                    <h4 className="font-medium text-sm sm:text-base text-gray-900">Add Service</h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Create a new service offering</p>
                                 </button>
                             </div>
                         </div>
@@ -582,11 +586,11 @@ const ImprovedAdminServices = () => {
 
                 {/* Services Tab */}
                 {activeTab === "services" && (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         {/* Filters */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <div className="flex flex-col lg:flex-row gap-4">
-                                <div className="flex-1">
+                        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                            <div className="flex flex-col gap-3 sm:gap-4">
+                                <div className="w-full">
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                         <input
@@ -594,15 +598,15 @@ const ImprovedAdminServices = () => {
                                             placeholder="Search services..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         />
                                     </div>
                                 </div>
-                                <div className="flex gap-4">
+                                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                                     <select
                                         value={filterType}
                                         onChange={(e) => setFilterType(e.target.value as any)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="flex-1 px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="ALL">All Types</option>
                                         <option value="AMC">AMC</option>
@@ -610,8 +614,9 @@ const ImprovedAdminServices = () => {
                                     </select>
                                     <button
                                         onClick={() => setShowInactive(!showInactive)}
-                                        className={`flex items-center px-4 py-2 rounded-lg transition-colors ${showInactive ? "bg-gray-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                        className={`flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
+                                            showInactive ? "bg-gray-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        }`}
                                     >
                                         {showInactive ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                                         {showInactive ? "Hide Inactive" : "Show Inactive"}
@@ -621,11 +626,13 @@ const ImprovedAdminServices = () => {
                         </div>
 
                         {/* Services Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                             {filteredServices.map((service) => (
                                 <div
                                     key={service.id}
-                                    className={`bg-white rounded-lg shadow-sm overflow-hidden ${!service.isActive ? "opacity-60" : ""}`}
+                                    className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow ${
+                                        !service.isActive ? "opacity-60" : ""
+                                    }`}
                                 >
                                     <div className="aspect-video bg-gray-200 relative">
                                         {service.image ? (
@@ -636,35 +643,36 @@ const ImprovedAdminServices = () => {
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <ImageIcon className="w-12 h-12 text-gray-400" />
+                                                <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
                                             </div>
                                         )}
-                                        <div className="absolute top-3 left-3">
+                                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
                                             <span
-                                                className={`px-2 py-1 rounded-full text-xs font-medium ${service.type === "URGENT" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
-                                                    }`}
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    service.type === "URGENT" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                                                }`}
                                             >
                                                 {service.type}
                                             </span>
                                         </div>
                                         {!service.isActive && (
-                                            <div className="absolute top-3 right-3">
+                                            <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
                                                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                     Inactive
                                                 </span>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="p-4">
-                                        <h3 className="font-semibold text-lg text-gray-900 mb-2">{service.name}</h3>
-                                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{service.description}</p>
-                                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                                    <div className="p-3 sm:p-4">
+                                        <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 truncate">{service.name}</h3>
+                                        <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{service.description}</p>
+                                        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
                                             <div className="flex items-center">
-                                                <LucideIndianRupee className="w-4 h-4 mr-1" />
+                                                <LucideIndianRupee className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                                 {service.price}
                                             </div>
                                             <div className="flex items-center">
-                                                <Clock className="w-4 h-4 mr-1" />
+                                                <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                                 {service.duration}min
                                             </div>
                                         </div>
@@ -677,12 +685,12 @@ const ImprovedAdminServices = () => {
 
                 {/* Slots Tab */}
                 {activeTab === "slots" && (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         {/* Slot Actions */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900">Time Slot Management</h3>
-                                <div className="flex gap-3">
+                        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Time Slot Management</h3>
+                                <div className="flex flex-wrap gap-2 sm:gap-3">
                                     {selectedSlotIds.length > 0 && (
                                         <button
                                             onClick={() => {
@@ -693,100 +701,97 @@ const ImprovedAdminServices = () => {
                                                 }
                                             }}
                                             disabled={slotsLoading}
-                                            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                                            className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors text-xs sm:text-sm"
                                         >
-                                            {selectedSlotIds.length === slots.length ? (
-                                                "Deselect All"
-                                            ) : (
-                                                "Select All"
-                                            )}
+                                            {selectedSlotIds.length === slots.length ? "Deselect All" : "Select All"}
                                         </button>
                                     )}
                                     {selectedSlotIds.length > 0 && (
                                         <button
                                             onClick={deleteSelectedSlots}
                                             disabled={slotsLoading}
-                                            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                            className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-xs sm:text-sm"
                                         >
                                             {slotsLoading ? (
-                                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin mr-2" />
                                             ) : (
-                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                                             )}
-                                            Delete Selected ({selectedSlotIds.length})
+                                            Delete ({selectedSlotIds.length})
                                         </button>
                                     )}
                                     <button
                                         onClick={() => setIsSlotManagerOpen(true)}
-                                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
                                     >
-                                        <Plus className="w-4 h-4 mr-2" />
+                                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                                         Add Slots
                                     </button>
                                 </div>
                             </div>
 
                             {/* Slot Stats */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                <div className="bg-green-50 rounded-lg p-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                                <div className="bg-green-50 rounded-lg p-3 sm:p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-green-800">Available Slots</p>
-                                            <p className="text-2xl font-bold text-green-900">{availableSlots.length}</p>
+                                            <p className="text-xs sm:text-sm font-medium text-green-800">Available Slots</p>
+                                            <p className="text-xl sm:text-2xl font-bold text-green-900 mt-1">{availableSlots.length}</p>
                                         </div>
-                                        <CheckCircle className="w-8 h-8 text-green-600" />
+                                        <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
                                     </div>
                                 </div>
-                                <div className="bg-orange-50 rounded-lg p-4">
+                                <div className="bg-orange-50 rounded-lg p-3 sm:p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-orange-800">Booked Slots</p>
-                                            <p className="text-2xl font-bold text-orange-900">{bookedSlots.length}</p>
+                                            <p className="text-xs sm:text-sm font-medium text-orange-800">Booked Slots</p>
+                                            <p className="text-xl sm:text-2xl font-bold text-orange-900 mt-1">{bookedSlots.length}</p>
                                         </div>
-                                        <Users className="w-8 h-8 text-orange-600" />
+                                        <Users className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
                                     </div>
                                 </div>
-                                <div className="bg-blue-50 rounded-lg p-4">
+                                <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-blue-800">Total Slots</p>
-                                            <p className="text-2xl font-bold text-blue-900">{slots.length}</p>
+                                            <p className="text-xs sm:text-sm font-medium text-blue-800">Total Slots</p>
+                                            <p className="text-xl sm:text-2xl font-bold text-blue-900 mt-1">{slots.length}</p>
                                         </div>
-                                        <Calendar className="w-8 h-8 text-blue-600" />
+                                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Slots Grid */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h4 className="font-medium text-gray-900 mb-4">All Time Slots</h4>
+                        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                            <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-3 sm:mb-4">All Time Slots</h4>
                             {slotsLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="w-6 h-6 animate-spin" />
                                 </div>
                             ) : slots.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
-                                    <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                    <p>No slots available</p>
+                                    <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-300" />
+                                    <p className="text-sm sm:text-base">No slots available</p>
                                     <button
                                         onClick={() => setIsSlotManagerOpen(true)}
-                                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                                     >
                                         Add Your First Slot
                                     </button>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                                     {slots.map((slot) => (
                                         <div
                                             key={slot.id}
-                                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedSlotIds.includes(slot.id)
-                                                ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                                                : slot.bookingCount > 0
+                                            className={`p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${
+                                                selectedSlotIds.includes(slot.id)
+                                                    ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                                                    : slot.bookingCount > 0
                                                     ? "border-orange-300 bg-orange-50"
                                                     : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                                                }`}
+                                            }`}
                                             onClick={() => slot.bookingCount === 0 && toggleSlotSelection(slot.id)}
                                         >
                                             <div className="flex items-center justify-between mb-3">
@@ -798,13 +803,14 @@ const ImprovedAdminServices = () => {
                                                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                                                 />
                                                 <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${slot.bookingCount > 0 ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"
-                                                        }`}
+                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                        slot.bookingCount > 0 ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"
+                                                    }`}
                                                 >
                                                     {slot.bookingCount > 0 ? `${slot.bookingCount} Booked` : "Available"}
                                                 </span>
                                             </div>
-                                            <div className="text-sm">
+                                            <div className="text-xs sm:text-sm">
                                                 <p className="font-medium text-gray-900 mb-1">
                                                     {new Date(slot.startTime).toLocaleDateString("en-US", {
                                                         weekday: "short",
@@ -834,32 +840,32 @@ const ImprovedAdminServices = () => {
 
                 {/* Bookings Tab */}
                 {activeTab === "bookings" && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Bookings</h3>
-                            <div className="space-y-4">
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Recent Bookings</h3>
+                            <div className="space-y-3 sm:space-y-4">
                                 {bookedSlots.length === 0 ? (
                                     <div className="text-center py-8 text-gray-500">
-                                        <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                        <p>No bookings yet</p>
+                                        <Users className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-300" />
+                                        <p className="text-sm sm:text-base">No bookings yet</p>
                                     </div>
                                 ) : (
                                     bookedSlots.map((slot) => (
-                                        <div key={slot.id} className="border border-gray-200 rounded-lg p-4">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-medium text-gray-900">
+                                        <div key={slot.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-sm sm:text-base text-gray-900 truncate">
                                                         {new Date(slot.startTime).toLocaleDateString()} at{" "}
                                                         {new Date(slot.startTime).toLocaleTimeString([], {
                                                             hour: "2-digit",
                                                             minute: "2-digit",
                                                         })}
                                                     </p>
-                                                    <p className="text-sm text-gray-600">
+                                                    <p className="text-xs sm:text-sm text-gray-600">
                                                         {slot.bookingCount} booking{slot.bookingCount > 1 ? "s" : ""}
                                                     </p>
                                                 </div>
-                                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium self-start sm:self-auto">
                                                     Booked
                                                 </span>
                                             </div>
@@ -874,37 +880,37 @@ const ImprovedAdminServices = () => {
 
             {/* Add Service Modal */}
             {isAddServiceModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b">
-                            <h2 className="text-xl font-semibold">Add New Service</h2>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md my-8">
+                        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
+                            <h2 className="text-lg sm:text-xl font-semibold">Add New Service</h2>
                             <button onClick={() => setIsAddServiceModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
+                        <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Name *</label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Service name"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Description *</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={3}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Service description"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Image *</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Image *</label>
                                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
                                     {imagePreview ? (
                                         <div className="relative">
@@ -926,45 +932,45 @@ const ImprovedAdminServices = () => {
                                     ) : (
                                         <label className="cursor-pointer">
                                             <div className="text-center">
-                                                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                                <p className="text-sm text-gray-600">Click to upload image</p>
+                                                <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
+                                                <p className="text-xs sm:text-sm text-gray-600">Click to upload image</p>
                                             </div>
                                             <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                                         </label>
                                     )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type</label>
                                     <select
                                         value={type}
                                         onChange={(e) => setType(e.target.value as "AMC" | "URGENT")}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
                                         <option value="AMC">AMC</option>
                                         <option value="URGENT">Urgent</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
                                     <input
                                         type="number"
                                         value={price}
                                         onChange={(e) => setPrice(Number(e.target.value))}
                                         min="0"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
                                 <input
                                     type="number"
                                     value={duration}
                                     onChange={(e) => setDuration(Number(e.target.value))}
                                     min="0"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
                             <div className="flex items-center">
@@ -975,22 +981,22 @@ const ImprovedAdminServices = () => {
                                     onChange={(e) => setIsActive(e.target.checked)}
                                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
-                                <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+                                <label htmlFor="isActive" className="ml-2 text-xs sm:text-sm text-gray-700">
                                     Active
                                 </label>
                             </div>
                         </div>
-                        <div className="flex gap-3 p-6 border-t">
+                        <div className="flex gap-3 p-4 sm:p-6 border-t">
                             <button
                                 onClick={() => setIsAddServiceModalOpen(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={addService}
                                 disabled={loading}
-                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                className="flex-1 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                             >
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Service"}
                             </button>
@@ -1001,77 +1007,77 @@ const ImprovedAdminServices = () => {
 
             {/* Advanced Slot Manager Modal */}
             {isSlotManagerOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b">
-                            <h2 className="text-xl font-semibold">Advanced Slot Manager</h2>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
+                        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
+                            <h2 className="text-lg sm:text-xl font-semibold">Advanced Slot Manager</h2>
                             <button onClick={() => setIsSlotManagerOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
-                            <div className="bg-blue-50 rounded-lg p-4">
-                                <h3 className="font-medium text-blue-900 mb-2">Bulk Slot Creation</h3>
-                                <p className="text-sm text-blue-700">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[calc(100vh-12rem)] overflow-y-auto">
+                            <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+                                <h3 className="font-medium text-sm sm:text-base text-blue-900 mb-2">Bulk Slot Creation</h3>
+                                <p className="text-xs sm:text-sm text-blue-700">
                                     Create multiple slots across multiple days with customizable time ranges and working days.
                                 </p>
                             </div>
 
                             {/* Date Range */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Start Date</label>
                                     <input
                                         type="date"
                                         value={bulkSlotSettings.startDate}
                                         min={new Date().toISOString().split("T")[0]}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, startDate: e.target.value }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">End Date</label>
                                     <input
                                         type="date"
                                         value={bulkSlotSettings.endDate}
                                         min={bulkSlotSettings.startDate || new Date().toISOString().split("T")[0]}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, endDate: e.target.value }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                             </div>
 
                             {/* Time Range */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Start Time</label>
                                     <input
                                         type="time"
                                         value={bulkSlotSettings.startTime}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, startTime: e.target.value }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">End Time</label>
                                     <input
                                         type="time"
                                         value={bulkSlotSettings.endTime}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, endTime: e.target.value }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                             </div>
 
                             {/* Slot Settings */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Slot Duration (minutes)</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Slot Duration (minutes)</label>
                                     <select
                                         value={bulkSlotSettings.slotDuration}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, slotDuration: Number(e.target.value) }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value={30}>30 minutes</option>
                                         <option value={60}>1 hour</option>
@@ -1080,11 +1086,11 @@ const ImprovedAdminServices = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Break Between Slots (minutes)</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Break Between Slots</label>
                                     <select
                                         value={bulkSlotSettings.breakBetween}
                                         onChange={(e) => setBulkSlotSettings((prev) => ({ ...prev, breakBetween: Number(e.target.value) }))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value={0}>No break</option>
                                         <option value={15}>15 minutes</option>
@@ -1096,7 +1102,7 @@ const ImprovedAdminServices = () => {
 
                             {/* Working Days */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Working Days</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Working Days</label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
                                         { id: 1, label: "Mon" },
@@ -1115,10 +1121,11 @@ const ImprovedAdminServices = () => {
                                                     : [...bulkSlotSettings.workingDays, day.id]
                                                 setBulkSlotSettings((prev) => ({ ...prev, workingDays: newWorkingDays }))
                                             }}
-                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${bulkSlotSettings.workingDays.includes(day.id)
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                                }`}
+                                            className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                                                bulkSlotSettings.workingDays.includes(day.id)
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
                                         >
                                             {day.label}
                                         </button>
@@ -1127,9 +1134,9 @@ const ImprovedAdminServices = () => {
                             </div>
 
                             {/* Preview */}
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <h4 className="font-medium text-gray-900 mb-2">Preview</h4>
-                                <div className="text-sm text-gray-600 space-y-1">
+                            <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                                <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-2">Preview</h4>
+                                <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                                     <p>
                                         • Duration: {bulkSlotSettings.startDate} to {bulkSlotSettings.endDate || "Not set"}
                                     </p>
@@ -1145,7 +1152,7 @@ const ImprovedAdminServices = () => {
                                             {Math.ceil(
                                                 (new Date(bulkSlotSettings.endDate).getTime() -
                                                     new Date(bulkSlotSettings.startDate).getTime()) /
-                                                (1000 * 60 * 60 * 24),
+                                                    (1000 * 60 * 60 * 24),
                                             ) *
                                                 bulkSlotSettings.workingDays.length *
                                                 generateTimeSlots(
@@ -1160,17 +1167,17 @@ const ImprovedAdminServices = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 p-6 border-t">
+                        <div className="flex gap-3 p-4 sm:p-6 border-t">
                             <button
                                 onClick={() => setIsSlotManagerOpen(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={createBulkSlots}
                                 disabled={slotsLoading || !bulkSlotSettings.startDate || !bulkSlotSettings.endDate}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                             >
                                 {slotsLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                                 Create Slots
@@ -1179,6 +1186,16 @@ const ImprovedAdminServices = () => {
                     </div>
                 </div>
             )}
+
+            <style jsx>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .hide-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </div>
     )
 }

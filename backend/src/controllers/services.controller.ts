@@ -1,12 +1,13 @@
 import { FastifyRequest } from "fastify/types/request";
 import { FastifyReply } from "fastify/types/reply";
-import { serviceDefinitionSchema, serviceSchema, slotSchema, statusSchema } from "@/schemas/services.schema";
-import { addServiceDefinition, addSlot, bookService, deleteService, deleteSlot, getAllPublicService, getAllServices, getAllSlots, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, updateStatus } from "@/services/services.service";
+import { cancelSchema, rescheduleSchema, serviceDefinitionSchema, serviceSchema, slotSchema, statusSchema } from "@/schemas/services.schema";
+import { addServiceDefinition, addSlot, bookService, cancelService, deleteService, deleteSlot, getAllPublicService, getAllServices, getAllSlots, getServiceById, getServiceSlotsAvailable, getTotalServicesCount, rescheduleService, updateStatus } from "@/services/services.service";
 import { parsePagination } from "@/utils/parsePagination";
 import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
 import { uploadToCloudinary } from "@/utils/uploadToClaudinary";
 import { parseMultipartData } from "@/utils/parseMultipartData";
+import z from "zod";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = req.user?.userId;
@@ -267,3 +268,59 @@ export const DeleteSlotHandler = async (req: FastifyRequest, reply: FastifyReply
         return sendError(reply, 422, error.message || "Failed to delete slot", error);
     }
 }
+
+export const RescheduleServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const userId = req.user?.userId;
+    
+    if (!userId) {
+        return sendError(reply, 401, "Unauthorized", "User ID is required");
+    }
+
+    const parsed = rescheduleSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        return sendError(reply, 400, "Validation failed", parsed.error.issues);
+    }
+
+    const { slotId } = parsed.data;
+
+    try {
+        const rescheduledBooking = await rescheduleService(id, slotId, userId);
+        
+        return reply.send({
+            message: "Service rescheduled successfully",
+            booking: rescheduledBooking
+        });
+    } catch (error: any) {
+        console.error("Failed to reschedule service:", error);
+        return sendError(reply, 500, error.message || "Failed to reschedule service", error);
+    }
+};
+
+export const CancelServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const userId = req.user?.userId;
+
+    if (!userId) {
+        return sendError(reply, 401, "Unauthorized", "User ID is required");
+    }
+
+    const parsed = cancelSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        return sendError(reply, 400, "Validation failed", parsed.error.issues);
+    }
+
+    try {
+        const cancelledBooking = await cancelService(id, userId, parsed.data.reason);
+        
+        return reply.send({
+            message: "Service cancelled successfully",
+            booking: cancelledBooking
+        });
+    } catch (error: any) {
+        console.error("Failed to cancel service:", error);
+        return sendError(reply, 500, error.message || "Failed to cancel service", error);
+    }
+};

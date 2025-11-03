@@ -34,6 +34,8 @@ import { LoadingSpinner } from '@/components/core/Loader';
 import { UnauthorizedAccess } from '@/components/core/UnauthorizedAccess';
 import { ServicesResponse } from '@/lib/types/services';
 import { toast } from 'sonner';
+import { RescheduleModal } from '../Services/RescheduleModal';
+import { CancelModal } from '../Services/CancelModal';
 
 type ViewMode = 'table' | 'cards';
 type StatusFilter = 'all' | 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
@@ -52,11 +54,19 @@ export default function MyServices() {
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
     const [selectedService, setSelectedService] = useState<any>(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+    
+    // Modal states
+    const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [selectedBookingForAction, setSelectedBookingForAction] = useState<any>(null);
+    
     const router = useRouter();
 
     useEffect(() => {
         if (authenticated) {
             fetchServices();
+            fetchAvailableSlots();
         }
     }, [currentPage, limit, authenticated]);
 
@@ -76,61 +86,43 @@ export default function MyServices() {
         }
     };
 
-    const handleCancelBooking = async (serviceId: string) => {
+    const fetchAvailableSlots = async () => {
         try {
-            setSelectedService(null);
-            // Add your cancel booking API call here
-            toast.success('This feature is not yet implemented', {
-                description: 'Your booking has been cancelled.',
-                action: {
-                    label: 'Undo',
-                    onClick: () => {
-                        // Handle undo action
-                    }
-                }
-            });
-        } catch (error) {
-            toast.error('Failed to cancel booking');
+            const result = await ServicesClass.getAvailableSlots();
+            setAvailableSlots(result.slots || []);
+        } catch (err) {
+            console.error('Failed to fetch available slots:', err);
         }
     };
 
-    const handleReschedule = (serviceId: string) => {
-        setSelectedService(null)
-        toast.error('This feature is not yet implemented', {
-            description: 'Your booking has been rescheduled.',
-            action: {
-                label: 'Undo',
-                onClick: () => {
-                    // Handle undo action
-                }
-            }
-        });
-        // router.push(`/services/${serviceId}/reschedule`);
+    const handleReschedule = async (bookingId: string, slotId: string) => {
+        await ServicesClass.rescheduleService(bookingId, slotId);
+        fetchServices();
+    };
+
+    const handleCancel = async (bookingId: string, reason?: string) => {
+        await ServicesClass.cancelService(bookingId, reason);
+        fetchServices();
+    };
+
+    const openRescheduleModal = (booking: any) => {
+        setSelectedBookingForAction(booking);
+        setShowRescheduleModal(true);
+    };
+
+    const openCancelModal = (booking: any) => {
+        setSelectedBookingForAction(booking);
+        setShowCancelModal(true);
     };
 
     const handleRebook = (service: any) => {
-        setSelectedService(null)
-        toast.error('This feature is not yet implemented', {
-            description: 'Your booking has been rebooked.',
-            action: {
-                label: 'Undo',
-                onClick: () => {
-                    // Handle undo action
-                }
-            }
-        });
-        // router.push(`/services/${service.service.id}/book`);
+        setSelectedService(null);
+        router.push(`/services/${service.service.id}/book`);
     };
 
     const handleDownloadInvoice = (serviceId: string) => {
         toast.info('Download invoice feature coming soon!', {
             description: 'Currently, invoices are not available for download.',
-            action: {
-                label: 'Okay',
-                onClick: () => {
-                    // Handle action
-                }
-            }
         });
     };
 
@@ -186,7 +178,6 @@ export default function MyServices() {
 
         let filtered = [...data.services];
 
-        // Search filter
         if (searchQuery.trim()) {
             filtered = filtered.filter(service =>
                 service.service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,14 +186,12 @@ export default function MyServices() {
             );
         }
 
-        // Status filter
         if (statusFilter !== 'all') {
             filtered = filtered.filter(service =>
                 service.status.toLowerCase() === statusFilter
             );
         }
 
-        // Sort
         filtered.sort((a, b) => {
             switch (sortBy) {
                 case 'oldest':
@@ -223,6 +212,7 @@ export default function MyServices() {
     const ServiceCard = ({ service }: { service: any }) => {
         const statusConfig = getStatusConfig(service.status);
         const StatusIcon = statusConfig.icon;
+        const isPendingOrScheduled = ['pending', 'scheduled'].includes(service.status.toLowerCase());
 
         return (
             <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
@@ -241,7 +231,6 @@ export default function MyServices() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* Service Details */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center text-gray-600">
                             <Calendar className="w-4 h-4 mr-2" />
@@ -261,7 +250,6 @@ export default function MyServices() {
                         </div>
                     </div>
 
-                    {/* Images */}
                     {(service.beforeImageUrl || service.afterImageUrl) && (
                         <div className="flex space-x-2">
                             {service.beforeImageUrl && (
@@ -287,12 +275,12 @@ export default function MyServices() {
                         </div>
                     )}
 
-                    {/* Actions */}
                     <div className="flex flex-wrap gap-2 pt-2 border-t">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedService(service)}
+                            className='cursor-pointer'
                         >
                             <Eye className="w-3 h-3 mr-1" />
                             Details
@@ -303,20 +291,20 @@ export default function MyServices() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleRebook(service)}
-                                className="text-blue-600"
+                                className="text-blue-600 cursor-pointer" 
                             >
                                 <RotateCcw className="w-3 h-3 mr-1" />
                                 Rebook
                             </Button>
                         )}
 
-                        {['pending', 'scheduled'].includes(service.status.toLowerCase()) && (
+                        {isPendingOrScheduled && (
                             <>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleReschedule(service.id)}
-                                    className="text-blue-600"
+                                    onClick={() => openRescheduleModal(service)}
+                                    className="text-blue-600 cursor-pointer"
                                 >
                                     <Calendar className="w-3 h-3 mr-1" />
                                     Reschedule
@@ -324,8 +312,8 @@ export default function MyServices() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleCancelBooking(service.id)}
-                                    className="text-red-600 hover:bg-red-50"
+                                    onClick={() => openCancelModal(service)}
+                                    className="text-red-600 hover:bg-red-50 cursor-pointer"
                                 >
                                     <X className="w-3 h-3 mr-1" />
                                     Cancel
@@ -334,7 +322,6 @@ export default function MyServices() {
                         )}
                     </div>
 
-                    {/* Booking Date */}
                     <div className="text-xs text-gray-500">
                         Booked on {formatDate(service.createdAt)}
                     </div>
@@ -348,6 +335,7 @@ export default function MyServices() {
 
         const statusConfig = getStatusConfig(selectedService.status);
         const StatusIcon = statusConfig.icon;
+        const isPendingOrScheduled = ['pending', 'scheduled'].includes(selectedService.status.toLowerCase());
 
         return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -370,7 +358,6 @@ export default function MyServices() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Status */}
                         <div>
                             <h4 className="font-medium mb-2">Status</h4>
                             <Badge className={`${statusConfig.color} border`}>
@@ -379,7 +366,6 @@ export default function MyServices() {
                             </Badge>
                         </div>
 
-                        {/* Service Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <h4 className="font-medium mb-2">Service Information</h4>
@@ -399,13 +385,11 @@ export default function MyServices() {
                             </div>
                         </div>
 
-                        {/* Description */}
                         <div>
                             <h4 className="font-medium mb-2">Description</h4>
                             <p className="text-sm text-gray-600">{selectedService.service.description}</p>
                         </div>
 
-                        {/* Images */}
                         {(selectedService.beforeImageUrl || selectedService.afterImageUrl) && (
                             <div>
                                 <h4 className="font-medium mb-2">Service Images</h4>
@@ -434,39 +418,39 @@ export default function MyServices() {
                             </div>
                         )}
 
-                        {/* Actions */}
                         <div className="flex flex-wrap gap-2 pt-4 border-t">
                             {selectedService.status.toLowerCase() === 'completed' && (
                                 <Button onClick={() => handleRebook(selectedService)}>
-                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    <RotateCcw className="w-4 h-4 mr-2 cursor-pointer" />
                                     Book Again
                                 </Button>
                             )}
 
-                            {['pending', 'scheduled'].includes(selectedService.status.toLowerCase()) && (
+                            {isPendingOrScheduled && (
                                 <>
                                     <Button
                                         variant="outline"
-                                        onClick={() => handleReschedule(selectedService.id)}
+                                        onClick={() => {
+                                            setSelectedService(null);
+                                            openRescheduleModal(selectedService);
+                                        }}
                                     >
-                                        <Calendar className="w-4 h-4 mr-2" />
+                                        <Calendar className="w-4 h-4 mr-2 cursor-pointer" />
                                         Reschedule
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        onClick={() => handleCancelBooking(selectedService.id)}
-                                        className="text-red-600 hover:bg-red-50"
+                                        onClick={() => {
+                                            setSelectedService(null);
+                                            openCancelModal(selectedService);
+                                        }}
+                                        className="text-red-600 hover:bg-red-50 cursor-pointer"
                                     >
                                         <X className="w-4 h-4 mr-2" />
                                         Cancel Booking
                                     </Button>
                                 </>
                             )}
-
-                            <Button variant="outline" onClick={() => handleDownloadInvoice(selectedService.id)}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Download Invoice
-                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -493,7 +477,7 @@ export default function MyServices() {
                         <p className="text-gray-600 mt-1">Manage your service bookings and appointments</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button onClick={() => router.push('/services')} className="bg-blue-600 hover:bg-blue-700">
+                        <Button onClick={() => router.push('/services')} className="bg-blue-600 hover:bg-blue-700 cursor-pointer">
                             <Plus className="w-4 h-4 mr-2" />
                             Book New Service
                         </Button>
@@ -567,7 +551,6 @@ export default function MyServices() {
                 <Card className="mb-6">
                     <CardContent className="p-4">
                         <div className="flex flex-col lg:flex-row gap-4">
-                            {/* Search */}
                             <div className="flex-1 relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <Input
@@ -578,7 +561,6 @@ export default function MyServices() {
                                 />
                             </div>
 
-                            {/* Filters */}
                             <div className="flex gap-3 flex-wrap">
                                 <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
                                     <SelectTrigger className="w-40">
@@ -606,7 +588,6 @@ export default function MyServices() {
                                     </SelectContent>
                                 </Select>
 
-                                {/* View Mode Toggle */}
                                 <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                                     <Button
                                         variant={viewMode === 'cards' ? 'default' : 'ghost'}
@@ -659,6 +640,7 @@ export default function MyServices() {
                                     {filteredServices.map((service) => {
                                         const statusConfig = getStatusConfig(service.status);
                                         const StatusIcon = statusConfig.icon;
+                                        const isPendingOrScheduled = ['pending', 'scheduled'].includes(service.status.toLowerCase());
 
                                         return (
                                             <TableRow key={service.id}>
@@ -702,6 +684,28 @@ export default function MyServices() {
                                                             >
                                                                 <RotateCcw className="w-3 h-3" />
                                                             </Button>
+                                                        )}
+                                                        {isPendingOrScheduled && (
+                                                            <>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => openRescheduleModal(service)}
+                                                                    title="Reschedule"
+                                                                    className='cursor-pointer'
+                                                                >
+                                                                    <Calendar className="w-3 h-3" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => openCancelModal(service)}
+                                                                    title="Cancel"
+                                                                    className='cursor-pointer'
+                                                                >
+                                                                    <X className="w-3 h-3 text-red-600" />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </TableCell>
@@ -780,6 +784,28 @@ export default function MyServices() {
                 )}
             </div>
             {selectedService && <ServiceDetailModal />}
+            
+            <RescheduleModal
+                isOpen={showRescheduleModal}
+                onClose={() => {
+                    setShowRescheduleModal(false);
+                    setSelectedBookingForAction(null);
+                }}
+                booking={selectedBookingForAction}
+                availableSlots={availableSlots}
+                onSuccess={fetchServices}
+                onReschedule={handleReschedule}
+            />
+            <CancelModal
+                isOpen={showCancelModal}
+                onClose={() => {
+                    setShowCancelModal(false);
+                    setSelectedBookingForAction(null);
+                }}
+                booking={selectedBookingForAction}
+                onSuccess={fetchServices}
+                onCancel={handleCancel}
+            />
         </div>
-    )
+    );
 }
