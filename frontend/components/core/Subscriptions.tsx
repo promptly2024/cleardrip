@@ -6,6 +6,7 @@ import { SubscriptionClass } from "@/lib/httpClient/subscription";
 import { SubscriptionPlan } from "@/lib/types/subscription";
 import { useRazorpayPayment } from "@/hooks/usePayment";
 import { toast } from "sonner";
+import { PaymentProcessingModal } from "../payment/Processing";
 
 // Icon assignment logic based on plan name
 const iconMap: Record<string, React.ElementType> = {
@@ -19,6 +20,7 @@ export default function SubscriptionsSection() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { startPayment, isProcessing } = useRazorpayPayment();
+  const [amount, setAmount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     async function fetchPlans() {
@@ -54,11 +56,18 @@ export default function SubscriptionsSection() {
   const handleSubscribe = async (planId: string) => {
     try {
       if (isProcessing) return;
+      setAmount(undefined);
+      const plan = plans.find((p) => p.id === planId);
+      if (!plan) {
+        toast.error("Selected plan not found.");
+        return;
+      }
+      setAmount(Number(plan.price));
       startPayment({
         paymentFor: "SUBSCRIPTION",
         subscriptionPlanId: planId,
         onSuccess: (data) => {
-          toast.success("Payment successful! Order placed.");
+          toast.success("Payment successful! Subscription activated.");
         },
         onError: (error) => {
           toast.error(`Payment failed: ${error.message}`);
@@ -71,6 +80,7 @@ export default function SubscriptionsSection() {
 
   return (
     <section className="py-12 sm:py-16 lg:py-24 px-4" style={{ background: 'linear-gradient(to bottom right, var(--white-50), var(--blue-50), var(--white-100))' }}>
+      <PaymentProcessingModal open={isProcessing} total={amount} />
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-12 lg:mb-16">
@@ -155,6 +165,8 @@ export default function SubscriptionsSection() {
                       IconComponent={IconComponent}
                       index={index}
                       onSubscribe={() => handleSubscribe(plan.id)}
+                      isProcessing={isProcessing}
+                      processingAmount={amount}
                     />
                   );
                 })}
@@ -205,13 +217,20 @@ function PricingCard({
   plan,
   IconComponent,
   index,
-  onSubscribe
+  onSubscribe,
+  isProcessing,
+  processingAmount
 }: {
   plan: SubscriptionPlan;
   IconComponent: React.ElementType;
   index: number;
   onSubscribe: () => void;
+  isProcessing?: boolean;
+  processingAmount?: number | undefined;
 }) {
+  // determine if this specific plan is currently being processed
+  const isProcessingThis = Boolean(isProcessing && processingAmount !== undefined && Number(plan.price) === processingAmount);
+
   return (
     <div
       // add pricing-card class, keyboard support, title and role for accessibility
@@ -223,7 +242,7 @@ function PricingCard({
       role="region"
       aria-label={`${plan.name} plan`}
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onSubscribe(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && !isProcessingThis) onSubscribe(); }}
       style={{
         borderColor: plan.popular ? 'var(--blue-500)' : 'var(--white-400)',
         animationDelay: `${index * 200}ms`,
@@ -288,14 +307,29 @@ function PricingCard({
 
       {/* CTA Button */}
       <Button
-        onClick={onSubscribe}
-        title={`Subscribe to ${plan.name}`}
-        aria-label={`Subscribe to ${plan.name}`}
-        className="subscribe-btn w-full py-6 text-lg font-semibold rounded-2xl transition-all duration-300 group text-white shadow-lg hover:shadow-xl cursor-pointer"
+        onClick={() => { if (!isProcessing) onSubscribe(); }}
+        title={isProcessingThis ? `Processing ${plan.name}` : `Subscribe to ${plan.name}`}
+        aria-label={isProcessingThis ? `Processing ${plan.name}` : `Subscribe to ${plan.name}`}
+        aria-busy={isProcessingThis}
+        className={`subscribe-btn w-full py-6 text-lg font-semibold rounded-2xl transition-all duration-300 group text-white shadow-lg hover:shadow-xl ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        disabled={Boolean(isProcessing)}
         style={{ backgroundColor: plan.popular ? 'var(--blue-600)' : 'var(--blue-800)' }}
       >
-        Subscribe
-        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+        {isProcessingThis ? (
+          <span className="flex items-center justify-center gap-2">
+            {/* spinner */}
+            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.15)" strokeWidth="4"></circle>
+              <path d="M22 12a10 10 0 0 0-10-10" stroke="white" strokeWidth="4" strokeLinecap="round"></path>
+            </svg>
+            Processing...
+          </span>
+        ) : (
+          <>
+            Subscribe
+            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+          </>
+        )}
       </Button>
 
       {/* Value Proposition */}

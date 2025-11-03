@@ -10,6 +10,7 @@ import AboutSection from '@/components/homepage/about-section';
 import FAQSection from '@/components/homepage/faq-section';
 import PricingSection from '@/components/homepage/pricing-section';
 import ContactSection from '@/components/homepage/contact-section';
+import SubscriptionsSection from '@/components/core/Subscriptions';
 
 export default function Home() {
 
@@ -19,7 +20,8 @@ export default function Home() {
       <FeaturedProducts />
       <HowCleardripWorks />
       <OurServices />
-      <PricingSection />
+      {/* <PricingSection /> */}
+      <SubscriptionsSection />
       <FAQSection />
       <AboutSection />
       <ContactSection />

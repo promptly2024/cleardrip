@@ -50,6 +50,10 @@ const CartPage: React.FC = () => {
             })),
             onSuccess: (data) => {
                 toast.success("Payment successful! Order placed.");
+                // clear the cart
+                clearCart();
+                // redirect to dashboard/orders
+                router.push('/dashboard/orders');
             },
             onError: (error) => {
                 toast.error(`Payment failed: ${error.message}`);
