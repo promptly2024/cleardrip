@@ -1,15 +1,17 @@
 // backend/src/controllers/auth.controller.ts
 import { FastifyReply, FastifyRequest } from "fastify"
 import { logger } from "@/lib/logger"
-import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema, updatePasswordSchema, updateUserSchema } from "@/schemas/auth.schema"
+import { forgotPasswordSchema, resetPasswordSchema, signinSchema, signupSchema, updatePasswordSchema, updateUserSchema, verifyResetTokenSchema } from "@/schemas/auth.schema"
 import { createUser, findAndUpdateUser, findUserByEmailOrPhone, updateUserFCMToken, updateUserPassword } from "@/services/user.service";
 import { removeAuthCookie, setAuthCookie } from "@/utils/cookies";
 import { sendError } from "@/utils/errorResponse";
 import { generateToken } from "@/utils/jwt";
 import { comparePassword } from "@/utils/hash";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
 import { UserSignUpTemplate } from "@/lib/email/template";
 import { emailQueue, emailQueueName } from "@/queues/email.queue";
+import { generatePasswordResetToken, resetUserPassword, verifyPasswordResetToken } from "@/services/passwordReset.service";
+import { sendPasswordResetEmail } from "@/lib/email/sendPasswordResetEmail";
 
 export const signupHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -84,34 +86,140 @@ export const signoutHandler = async (req: FastifyRequest, reply: FastifyReply) =
     }
 }
 
-export const forgotPasswordHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+export const forgotPasswordHandler = async (
+    req: FastifyRequest,
+    reply: FastifyReply
+) => {
     try {
-        const { email } = forgotPasswordSchema.parse(req.body)
-        const user = await findUserByEmailOrPhone(email)
-        if (!user) {
-            return reply.code(404).send({ error: "User not found" })
+        const { email } = forgotPasswordSchema.parse(req.body);
+        
+        const user = await findUserByEmailOrPhone(email);
+        
+        // Always return success for security (prevents email enumeration attacks)
+        if (!user || !user.email) {
+            logger.warn(`Password reset requested for non-existent email: ${email}`);
+            return reply.code(200).send({
+                message: "If an account with that email exists, you will receive a password reset link shortly.",
+                success: true,
+            });
         }
-        // TODO: Implement password reset logic
-        // const resetPasswordToken = crypto.randomBytes(32).toString('hex');
-        // const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
-        // const hashedToken = crypto.createHash('sha256').update(resetPasswordToken).digest('hex');
-
-        return reply.code(200).send({ message: "Password reset link sent" })
+        
+        try {
+            // Generate secure reset token
+            const { plainToken } = await generatePasswordResetToken(user.id);
+            
+            // Send reset email
+            await sendPasswordResetEmail(user.email, plainToken, user.name);
+            
+            logger.info(`Password reset email sent to ${user.email} for user ${user.id}`);
+        } catch (emailError) {
+            logger.error(emailError, `Failed to send password reset email to ${user.email}`);
+            // Still return success to prevent enumeration
+        }
+        
+        return reply.code(200).send({
+            message: "If an account with that email exists, you will receive a password reset link shortly.",
+            success: true,
+        });
     } catch (error) {
-        logger.error(error, "Forgot password error")
-        return sendError(reply, 500, "Forgot password failed", error)
+        logger.error(error, "Forgot password handler error");
+        
+        if (error instanceof z.ZodError) {
+            return sendError(reply, 400, "Invalid email format", error);
+        }
+        
+        return sendError(reply, 500, "Failed to process password reset request", error);
     }
-}
+};
 
-export const resetPasswordHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+export const verifyResetTokenHandler = async (
+    req: FastifyRequest,
+    reply: FastifyReply
+) => {
     try {
-        const { token, newPassword } = resetPasswordSchema.parse(req.body)
-        // TODO: Implement password reset logic
+        const { token } = req.query as { token?: string };
+        
+        if (!token) {
+            return sendError(reply, 400, "Reset token is required");
+        }
+        
+        try {
+            verifyResetTokenSchema.parse({ token });
+        } catch (error) {
+            return sendError(reply, 400, "Invalid token format");
+        }
+        
+        const verification = await verifyPasswordResetToken(token);
+        
+        if (!verification.valid) {
+            return reply.code(400).send({ 
+                valid: false, 
+                error: verification.error,
+                code: verification.code,
+            });
+        }
+        
+        return reply.code(200).send({ 
+            valid: true,
+            message: "Token is valid. You can now reset your password."
+        });
     } catch (error) {
-        logger.error(error, "Reset password error")
-        return sendError(reply, 500, "Reset password failed", error)
+        logger.error(error, "Token verification handler error");
+        return sendError(reply, 500, "Failed to verify token", error);
     }
-}
+};
+
+export const resetPasswordHandler = async (
+    req: FastifyRequest,
+    reply: FastifyReply
+) => {
+    try {
+        const { token, newPassword } = resetPasswordSchema.parse(req.body);
+        
+        try {
+            // Reset password (includes token verification)
+            const user = await resetUserPassword(token, newPassword);
+            
+            logger.info(`Password reset successful for user ${user.id} (${user.email})`);
+            
+            return reply.code(200).send({
+                success: true,
+                message: "Password reset successful! You can now login with your new password.",
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                }
+            });
+        } catch (error: any) {
+            logger.warn(`Password reset failed: ${error.message}`);
+            
+            // Return specific error messages
+            if (error.message.includes('expired')) {
+                return sendError(reply, 400, 'Reset token has expired. Please request a new password reset.', error);
+            }
+            
+            if (error.message.includes('already been used')) {
+                return sendError(reply, 400, 'This reset link has already been used. Please request a new password reset.', error);
+            }
+            
+            if (error.message.includes('Invalid')) {
+                return sendError(reply, 400, 'Invalid reset token. Please request a new password reset.', error);
+            }
+            
+            throw error;
+        }
+    } catch (error) {
+        logger.error(error, "Reset password handler error");
+        
+        if (error instanceof ZodError) {
+            const errorMessage = error.issues[0]?.message || "Invalid input";
+            return sendError(reply, 400, errorMessage, error);
+        }
+        
+        return sendError(reply, 500, "Failed to reset password", error);
+    }
+};
 
 export const updateProfileHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {

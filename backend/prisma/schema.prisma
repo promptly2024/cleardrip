@@ -31,6 +31,7 @@ model User {
   tdsLogs       TDSLog[]
   notifications Notification[]
   whatsappLogs  WhatsAppLog[]
+  passwordResetTokens PasswordResetToken[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   PaymentOrder  PaymentOrder[]
@@ -45,6 +46,20 @@ model Address {
   country    String
 
   user User? @relation(name: "UserAddress")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique 
+  plainToken String 
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum LoyaltyStatus {
