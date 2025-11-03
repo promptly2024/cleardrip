@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 
 export const generatePasswordResetToken = async (userId: string) => {

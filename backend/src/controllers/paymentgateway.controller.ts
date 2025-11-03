@@ -202,7 +202,7 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
         const amountPaid = Number(razorpayPayment.amount) / 100.0;
 
         // Use transaction: create transaction record and update order status atomically
-        const [transaction] = await prisma.$transaction([
+        const txOps: any[] = [
             prisma.paymentTransaction.create({
                 data: {
                     orderId: paymentOrder.id,
@@ -217,16 +217,29 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
             prisma.paymentOrder.update({
                 where: { id: paymentOrder.id },
                 data: { status: "SUCCESS" },
-            })
-        ])
+            }),
+        ];
 
+        // If subscription payment, activate the subscription
+        if (paymentOrder.subscriptionId) {
+            txOps.push(
+                prisma.subscription.update({
+                    where: { id: paymentOrder.subscriptionId },
+                    data: { status: "CONFIRMED" },
+                })
+            );
+        }
+
+        const [transaction] = await prisma.$transaction(txOps);
+
+        // Return success response
         return reply.send({ success: true, message: "Payment verified", transaction });
     } catch (err) {
         logger.error(err);
         const details = err instanceof Error ? err.message : String(err);
         return reply.code(500).send({ error: "Payment verification failed", details });
     }
-};
+}
 
 export const cancelPayment = async (req: FastifyRequest, reply: FastifyReply) => {
     const { orderId } = req.body as any
