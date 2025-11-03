@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Upload, Clock, Star, CheckCircle } from 'luc
 import { APIURL } from '@/utils/env';
 import { toast } from 'sonner';
 import { useRouter, useParams } from 'next/navigation';
+import { useRazorpayPayment } from '@/hooks/usePayment';
 interface Service {
   id: string;
   name: string;
@@ -47,6 +48,65 @@ interface SlotsDuration {
   updatedAt: string;
 }
 
+// {
+//   "message": "Service booked successfully",
+//     "service": {
+//     "id": "462804f4-af31-4089-a706-fb85ff9dc70a",
+//       "userId": "37c7d74c-48f9-4648-952c-9e6416daa1cf",
+//         "serviceId": "66bf9d01-08f4-434d-b489-40baed29d620",
+//           "slotId": "02b67275-5354-4631-9ece-35188239373c",
+//             "status": "PENDING",
+//               "beforeImageUrl": null,
+//                 "afterImageUrl": null,
+//                   "createdAt": "2025-11-03T12:31:51.768Z",
+//                     "updatedAt": "2025-11-03T12:31:51.768Z"
+//   },
+//   "razorpayOrder": {
+//     "amount": 300000,
+//       "amount_due": 300000,
+//         "amount_paid": 0,
+//           "attempts": 0,
+//             "created_at": 1762173114,
+//               "currency": "INR",
+//                 "entity": "order",
+//                   "id": "order_RbGh64HrVVL1KV",
+//                     "notes": [],
+//                       "offer_id": null,
+//                         "receipt": "rcpt_1762173109844_qf7jqt",
+//                           "status": "created"
+//   }
+// }
+
+interface ResponseType {
+  message: string;
+  key: string;
+  service: {
+    id: string;
+    userId: string;
+    serviceId: string;
+    slotId: string;
+    status: ServiceStatus;
+    beforeImageUrl: string | null;
+    afterImageUrl: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  razorpayOrder: {
+    amount: number;
+    amount_due: number;
+    amount_paid: number;
+    attempts: number;
+    created_at: number;
+    currency: string;
+    entity: string;
+    id: string;
+    notes: string[];
+    offer_id: string | null;
+    receipt: string;
+    status: string;
+  };
+}
+
 export default function ServiceBookingPage() {
   const { id } = useParams<{ id: string }>();
   const [service, setService] = useState<Service | null>(null);
@@ -60,7 +120,7 @@ export default function ServiceBookingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [serviceBooked, setServiceBooked] = useState(false);
-
+  const { generateOptions, initiatePayment } = useRazorpayPayment();
   const router = useRouter();
 
   useEffect(() => {
@@ -168,14 +228,32 @@ export default function ServiceBookingPage() {
         body: formData
       });
 
-      const data = await response.json();
 
       if (!response.ok) {
+        const data = await response.json()
         const errorMessage = data.error || data.message || 'Failed to book service';
         const details = data.details ? ` Details: ${JSON.stringify(data.details)}` : '';
         toast.error(errorMessage + details);
         return;
       }
+
+      const data = await response.json() as ResponseType;
+      const options = generateOptions(
+        data.key,
+        data.razorpayOrder.id,
+        data.razorpayOrder.amount,
+        data.razorpayOrder.currency,
+        'Service' as any,
+        () => {
+          toast.success("Payment successful! Your service booking is confirmed.");
+          router.push('/user/dashboard?tabs=services');
+        },
+        () => { },
+        (err: any) => {
+          toast.error("Payment failed or was cancelled. Please try booking again.");
+        }
+      );
+      await initiatePayment(options);
 
       toast.success("Service booked successfully!", {
         description: `Your service "${service.name}" has been booked for ${new Date(selectedSlot.startTime).toLocaleString()}.`,

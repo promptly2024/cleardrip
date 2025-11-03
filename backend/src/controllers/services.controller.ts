@@ -75,6 +75,7 @@ export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyRepl
 
         return reply.code(201).send({
             message: "Service booked successfully",
+            key: process.env.RAZORPAY_KEY_ID,
             service: bookedService,
             razorpayOrder
         });

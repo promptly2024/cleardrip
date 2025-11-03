@@ -2,7 +2,6 @@
 import { FastifyRequest, FastifyReply } from "fastify"
 import { razorpay } from "../utils/razorpay"
 import { prisma } from "@/lib/prisma"
-import crypto from "crypto"
 import { logger } from "@/lib/logger"
 import { createRazorpayOrder, verifyRazorpaySignature } from "@/lib/createRazorpayOrder"
 import { createSubscription } from "@/services/subscription.service"
@@ -166,7 +165,7 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
             return reply.code(404).send({ success: false, message: "Payment order not found" });
         }
 
-        // Idempotency: if a successful transaction already exists, return success
+        // Idempotency checks
         const existingSuccess = await prisma.paymentTransaction.findFirst({
             where: { orderId: paymentOrder.id, status: "SUCCESS" }
         })
@@ -174,7 +173,6 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
             return reply.send({ success: true, message: "Payment already recorded", transaction: existingSuccess })
         }
 
-        // Also prevent processing the same razorpay payment twice
         const existingByRzpId = await prisma.paymentTransaction.findFirst({
             where: { razorpayPaymentId: paymentId }
         })
@@ -192,7 +190,6 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
             return reply.code(400).send({ success: false, message: "Payment amount mismatch" });
         }
 
-        // Ensure payment captured or status indicates success
         const rzpStatus = (razorpayPayment.status || "").toString().toLowerCase();
         if (rzpStatus !== "captured" && rzpStatus !== "authorized") {
             logger.error("Razorpay payment not captured/authorized", { status: razorpayPayment.status, orderId, paymentId })
@@ -201,9 +198,10 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
 
         const amountPaid = Number(razorpayPayment.amount) / 100.0;
 
-        // Use transaction: create transaction record and update order status atomically
-        const txOps: any[] = [
-            prisma.paymentTransaction.create({
+        // Use a transaction callback so we can perform reads and writes atomically (validate inventory before decrement)
+        const transaction = await prisma.$transaction(async (tx) => {
+            // Create transaction record
+            const createdTx = await tx.paymentTransaction.create({
                 data: {
                     orderId: paymentOrder.id,
                     razorpayPaymentId: paymentId,
@@ -213,24 +211,53 @@ export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) =>
                     amountPaid: amountPaid,
                     capturedAt: new Date(),
                 },
-            }),
-            prisma.paymentOrder.update({
+            });
+
+            // Update payment order status
+            await tx.paymentOrder.update({
                 where: { id: paymentOrder.id },
                 data: { status: "SUCCESS" },
-            }),
-        ];
+            });
 
-        // If subscription payment, activate the subscription
-        if (paymentOrder.subscriptionId) {
-            txOps.push(
-                prisma.subscription.update({
+            // If subscription payment, activate the subscription
+            if (paymentOrder.subscriptionId) {
+                await tx.subscription.update({
                     where: { id: paymentOrder.subscriptionId },
                     data: { status: "CONFIRMED" },
-                })
-            );
-        }
+                });
+            }
+            else if (paymentOrder.purpose === "SERVICE_BOOKING" && paymentOrder.bookingId) {
+                // Confirm the service booking
+                await tx.serviceBooking.update({
+                    where: { id: paymentOrder.bookingId },
+                    data: { status: "IN_PROGRESS" },
+                });
+            }
+            else if (paymentOrder.purpose === "PRODUCT_PURCHASE") {
+                // Deduct product inventory with validation
+                const items = await tx.paymentOrderItem.findMany({
+                    where: { orderId: paymentOrder.id }
+                });
 
-        const [transaction] = await prisma.$transaction(txOps);
+                for (const item of items) {
+                    const product = await tx.product.findUnique({ where: { id: item.productId } });
+                    if (!product) {
+                        throw new Error(`Product not found: ${item.productId}`);
+                    }
+                    const inv = Number(product.inventory ?? 0);
+                    if (inv < item.quantity) {
+                        throw new Error(`Insufficient inventory for product ${item.productId}`);
+                    }
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { inventory: { decrement: item.quantity } }
+                    });
+                }
+            }
+
+            // return created transaction record for response
+            return createdTx;
+        });
 
         // Return success response
         return reply.send({ success: true, message: "Payment verified", transaction });
@@ -250,17 +277,41 @@ export const cancelPayment = async (req: FastifyRequest, reply: FastifyReply) =>
     try {
         if (!orderId) return reply.code(400).send({ error: "orderId is required" })
 
-        // Find order first, ensure it belongs to user, then update. Use a transaction for safety.
+        // Find order first, ensure it belongs to user
         const paymentOrder = await prisma.paymentOrder.findUnique({ where: { razorpayOrderId: orderId } })
         if (!paymentOrder) return reply.code(404).send({ error: "Payment order not found" })
         if (paymentOrder.userId !== userId) return reply.code(403).send({ error: "Forbidden" })
 
-        await prisma.$transaction([
-            prisma.paymentOrder.update({
+        // Perform entire cancellation flow in a single transaction to ensure atomicity
+        await prisma.$transaction(async (tx) => {
+            await tx.paymentOrder.update({
                 where: { id: paymentOrder.id },
-                data: { status: "CANCELLED", }
-            })
-        ])
+                data: { status: "CANCELLED" }
+            });
+
+            if (paymentOrder.subscriptionId) {
+                await tx.subscription.update({
+                    where: { id: paymentOrder.subscriptionId },
+                    data: { status: "CANCELLED" }
+                });
+            } else if (paymentOrder.purpose === "SERVICE_BOOKING" && paymentOrder.bookingId) {
+                // delete service booking if any
+                await tx.serviceBooking.delete({
+                    where: { id: paymentOrder.bookingId }
+                });
+            } else if (paymentOrder.purpose === "PRODUCT_PURCHASE") {
+                // restock products
+                const items = await tx.paymentOrderItem.findMany({
+                    where: { orderId: paymentOrder.id }
+                });
+                for (const item of items) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { inventory: { increment: item.quantity } }
+                    });
+                }
+            }
+        });
 
         return reply.send({ success: true })
     } catch (err: unknown) {
