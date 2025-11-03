@@ -7,7 +7,7 @@ import { isAdmin } from "@/utils/auth";
 import { sendError } from "@/utils/errorResponse";
 import { uploadToCloudinary } from "@/utils/uploadToClaudinary";
 import { parseMultipartData } from "@/utils/parseMultipartData";
-import z from "zod";
+import { createRazorpayOrder } from "@/lib/createRazorpayOrder";
 
 export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = req.user?.userId;
@@ -51,12 +51,32 @@ export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyRepl
             console.log("No files uploaded, proceeding without image...");
         }
         console.log("Service data to be booked:", serviceData);
+        // fetch service details and create Razorpay order
+        const serviceDetails = await getServiceById(serviceData.serviceId, false);
+        if (!serviceDetails) {
+            return sendError(reply, 404, "Service not found", "Invalid service ID");
+        }
+        // Ensure price is present and a number before using it
+        if (serviceDetails.price == null) {
+            return sendError(reply, 500, "Service price is missing", "Invalid service price");
+        }
+        // Convert Decimal-like price (e.g. Prisma Decimal) to number safely
+        const priceNumber: number = typeof serviceDetails.price === "number"
+            ? serviceDetails.price
+            : (typeof (serviceDetails.price as any)?.toNumber === "function"
+                ? (serviceDetails.price as any).toNumber()
+                : Number(serviceDetails.price));
 
-        const service = await bookService(serviceData, userId);
+        if (!isFinite(priceNumber) || priceNumber <= 0) {
+            return sendError(reply, 400, "Service price is invalid", "Cannot book free or negative priced service");
+        }
+        const razorpayOrder = await createRazorpayOrder(priceNumber);
+        const bookedService = await bookService(serviceData, userId);
 
         return reply.code(201).send({
             message: "Service booked successfully",
-            service
+            service: bookedService,
+            razorpayOrder
         });
     } catch (error) {
         console.error("Service booking failed:", error);
@@ -272,7 +292,7 @@ export const DeleteSlotHandler = async (req: FastifyRequest, reply: FastifyReply
 export const RescheduleServiceHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const userId = req.user?.userId;
-    
+
     if (!userId) {
         return sendError(reply, 401, "Unauthorized", "User ID is required");
     }
@@ -287,7 +307,7 @@ export const RescheduleServiceHandler = async (req: FastifyRequest, reply: Fasti
 
     try {
         const rescheduledBooking = await rescheduleService(id, slotId, userId);
-        
+
         return reply.send({
             message: "Service rescheduled successfully",
             booking: rescheduledBooking
@@ -314,7 +334,7 @@ export const CancelServiceHandler = async (req: FastifyRequest, reply: FastifyRe
 
     try {
         const cancelledBooking = await cancelService(id, userId, parsed.data.reason);
-        
+
         return reply.send({
             message: "Service cancelled successfully",
             booking: cancelledBooking

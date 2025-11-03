@@ -4,6 +4,8 @@ import { razorpay } from "../utils/razorpay"
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
 import { logger } from "@/lib/logger"
+import { createRazorpayOrder, verifyRazorpaySignature } from "@/lib/createRazorpayOrder"
+import { createSubscription } from "@/services/subscription.service"
 
 interface Payload {
     paymentFor: "SERVICE" | "PRODUCT" | "SUBSCRIPTION" | "OTHER"
@@ -21,6 +23,9 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
 
         let prismaPurpose: "SERVICE_BOOKING" | "PRODUCT_PURCHASE" | "SUBSCRIPTION" | "OTHER" = "OTHER"
         let totalAmount = 0
+
+        // track created subscription id (if any)
+        let createdSubscriptionId: string | null = null
 
         // Determine purpose
         switch (paymentFor) {
@@ -87,23 +92,16 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
             if (!plan) return reply.code(404).send({ error: "Subscription plan not found" })
 
             totalAmount = Number(plan.price)
+
+            // create subscription record here where `plan` and `subscriptionPlanId` are known/validated
+            const subscription = await createSubscription(userId, subscriptionPlanId);
+            createdSubscriptionId = subscription.id
         }
 
         if (totalAmount <= 0)
             return reply.code(400).send({ error: "Invalid total amount" })
 
-        // Ensure Razorpay secret/config present
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-            logger.error("Razorpay credentials missing")
-            return reply.code(500).send({ error: "Payment provider misconfigured" })
-        }
-
-        // Create Razorpay order
-        const razorpayOrder = await razorpay.orders.create({
-            amount: Math.round(totalAmount * 100),
-            currency: "INR",
-            receipt: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-        })
+        const razorpayOrder = await createRazorpayOrder(totalAmount)
 
         // Create PaymentOrder record (Single DB op; nested items created atomically)
         const paymentOrder = await prisma.paymentOrder.create({
@@ -113,7 +111,8 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
                 userId,
                 purpose: prismaPurpose,
                 bookingId: paymentFor === "SERVICE" ? serviceId : null,
-                subscriptionId: paymentFor === "SUBSCRIPTION" ? subscriptionPlanId : null,
+                // use the created subscription id (or null)
+                subscriptionId: paymentFor === "SUBSCRIPTION" ? createdSubscriptionId : null,
                 items: paymentFor === "PRODUCT"
                     ? {
                         create: productItems.map(p => ({
@@ -146,26 +145,16 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
 }
 export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-        const { orderId, paymentId, signature } = req.body as any;
+        const { orderId, paymentId, signature, paymentFor } = req.body as any;
 
         if (!orderId || !paymentId || !signature) {
             return reply.code(400).send({ success: false, message: "Missing required fields" });
         }
 
-        if (!process.env.RAZORPAY_KEY_SECRET) {
-            logger.error("Razorpay secret missing")
-            return reply.code(500).send({ success: false, message: "Payment provider misconfigured" })
-        }
-
         // Verify Razorpay signature
-        const body = orderId + "|" + paymentId;
-        const expectedSignature = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(body)
-            .digest("hex");
-
-        if (expectedSignature !== signature) {
-            return reply.code(400).send({ success: false, message: "Signature verification failed" });
+        if (!verifyRazorpaySignature(orderId, paymentId, signature)) {
+            logger.warn("Razorpay signature verification failed", { orderId, paymentId })
+            return reply.code(400).send({ success: false, message: "Invalid payment signature" });
         }
 
         // Get internal PaymentOrder record

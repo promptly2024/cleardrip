@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Star, Crown, Shield, Sparkles } from "lucide-react";
 import { SubscriptionClass } from "@/lib/httpClient/subscription";
 import { SubscriptionPlan } from "@/lib/types/subscription";
+import { useRazorpayPayment } from "@/hooks/usePayment";
+import { toast } from "sonner";
 
 // Icon assignment logic based on plan name
 const iconMap: Record<string, React.ElementType> = {
@@ -16,6 +18,7 @@ export default function SubscriptionsSection() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { startPayment, isProcessing } = useRazorpayPayment();
 
   useEffect(() => {
     async function fetchPlans() {
@@ -50,7 +53,17 @@ export default function SubscriptionsSection() {
 
   const handleSubscribe = async (planId: string) => {
     try {
-      await SubscriptionClass.subscribeToPlan(planId);
+      if (isProcessing) return;
+      startPayment({
+        paymentFor: "SUBSCRIPTION",
+        subscriptionPlanId: planId,
+        onSuccess: (data) => {
+          toast.success("Payment successful! Order placed.");
+        },
+        onError: (error) => {
+          toast.error(`Payment failed: ${error.message}`);
+        },
+      });
     } catch (error) {
       console.error("Subscription failed:", error);
     }
@@ -188,25 +201,24 @@ export default function SubscriptionsSection() {
 }
 
 // Pricing Card Component
-function PricingCard({ 
-  plan, 
-  IconComponent, 
-  index, 
-  onSubscribe 
-}: { 
-  plan: SubscriptionPlan; 
-  IconComponent: React.ElementType; 
-  index: number; 
+function PricingCard({
+  plan,
+  IconComponent,
+  index,
+  onSubscribe
+}: {
+  plan: SubscriptionPlan;
+  IconComponent: React.ElementType;
+  index: number;
   onSubscribe: () => void;
 }) {
   return (
     <div
       // add pricing-card class, keyboard support, title and role for accessibility
-      className={`pricing-card relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 border-2 group ${
-        plan.popular
-          ? 'ring-4 scale-105 lg:scale-110'
-          : 'hover:border-blue-300'
-      }`}
+      className={`pricing-card relative bg-white rounded-3xl p-8 lg:p-10 shadow-lg hover:shadow-2xl transition-all duration-500 border-2 group ${plan.popular
+        ? 'ring-4 scale-105 lg:scale-110'
+        : 'hover:border-blue-300'
+        }`}
       title={`${plan.name} — ${plan.description}`}
       role="region"
       aria-label={`${plan.name} plan`}

@@ -143,6 +143,7 @@ enum ServiceStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  PAYMENT_INCOMPLETE
 }
 
 model SubscriptionPlan {
@@ -168,9 +169,16 @@ model Subscription {
 
   startDate    DateTime
   endDate      DateTime
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  status       SubscriptionPaymentStatus @default(PENDING)
   PaymentOrder PaymentOrder[]
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
 }
 
 model TDSLog {
@@ -274,7 +282,7 @@ model PaymentTransaction {
   paymentOrder PaymentOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      String       @unique
 
-  razorpayPaymentId String? @unique // Razorpay-generated payment_id (unique to prevent duplicates)
+  razorpayPaymentId String?       @unique // Razorpay-generated payment_id (unique to prevent duplicates)
   razorpaySignature String? // for verification
   status            PaymentStatus
   method            String? // UPI, CARD, WALLET, etc.
@@ -293,7 +301,7 @@ model PaymentOrderItem {
   product   Product @relation(fields: [productId], references: [id])
   productId String
 
-  quantity Int   @default(1)
+  quantity Int     @default(1)
   price    Decimal
   subtotal Decimal
 

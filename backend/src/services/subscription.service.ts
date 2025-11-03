@@ -11,6 +11,8 @@ export const getSubscription = async (userId: string) => {
 
 // Will Improve this later to handle different plans and durations
 export const createSubscription = async (userId: string, planId: string) => {
+    // delete all subscription which are created before 5 minute ago and have no payment
+    const 
     // Get the plan details
     const plan = await prisma.subscriptionPlan.findUnique({
         where: { id: planId }
