@@ -71,15 +71,15 @@ enum AdminRole {
 }
 
 model Product {
-  id           String         @id @default(uuid())
-  name         String
-  price        Float
-  description  String?
-  image        String?
-  inventory    Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  PaymentOrder PaymentOrder[]
+  id          String             @id @default(uuid())
+  name        String
+  price       Decimal
+  description String?
+  image       String?
+  inventory   Int
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  orderItems  PaymentOrderItem[]
 }
 
 model ServiceDefinition {
@@ -88,7 +88,7 @@ model ServiceDefinition {
   description String?
   type        ServiceType
   image       String?
-  price       Float?
+  price       Decimal?
 
   duration Int?
   isActive Boolean @default(true)
@@ -149,7 +149,7 @@ model SubscriptionPlan {
   id          String   @id @default(uuid())
   name        String // e.g. "Monthly", "Annual", "Premium"
   description String? // optional details about the plan
-  price       Float // cost of the plan
+  price       Decimal // cost of the plan
   duration    Int // in days (e.g. 30 = monthly, 365 = yearly)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -249,7 +249,7 @@ model ContactMessage {
 model PaymentOrder {
   id              String         @id @default(uuid())
   razorpayOrderId String         @unique // Razorpay-generated order_id
-  amount          Float
+  amount          Decimal
   currency        String         @default("INR")
   status          PaymentStatus  @default(PENDING)
   purpose         PaymentPurpose // booking, subscription, product purchase
@@ -262,8 +262,7 @@ model PaymentOrder {
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionId String?
 
-  product   Product? @relation(fields: [productId], references: [id])
-  productId String?
+  items PaymentOrderItem[]
 
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -272,18 +271,34 @@ model PaymentOrder {
 
 model PaymentTransaction {
   id           String       @id @default(uuid())
-  paymentOrder PaymentOrder @relation(fields: [orderId], references: [id])
+  paymentOrder PaymentOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      String       @unique
 
-  razorpayPaymentId String? // Razorpay-generated payment_id
+  razorpayPaymentId String? @unique // Razorpay-generated payment_id (unique to prevent duplicates)
   razorpaySignature String? // for verification
   status            PaymentStatus
   method            String? // UPI, CARD, WALLET, etc.
-  amountPaid        Float?
+  amountPaid        Decimal?
   capturedAt        DateTime?
   errorReason       String?
 
   createdAt DateTime @default(now())
+}
+
+model PaymentOrderItem {
+  id      String       @id @default(uuid())
+  order   PaymentOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  quantity Int   @default(1)
+  price    Decimal
+  subtotal Decimal
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PaymentStatus {
@@ -291,6 +306,7 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
+  CANCELLED
 }
 
 enum PaymentPurpose {

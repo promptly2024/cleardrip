@@ -1,6 +1,7 @@
 // File: backend/src/middleware/requireRole.ts
 import { FastifyRequest, FastifyReply } from "fastify"
 import { verifyToken } from "../utils/jwt"
+import { logger } from "@/lib/logger"
 
 type Role = 'ADMIN' | 'USER' | 'SUPER_ADMIN'
 
@@ -20,6 +21,7 @@ export function requireRole(allowedRoles: Role[]) {
         const token = req.cookies?.admin_token || req.cookies?.user_token || req.cookies?.super_admin_token;
         // console.log(`\n\nReq.Cookies : ${JSON.stringify(req.cookies)}\n\n`);
         if (!token) {
+            logger.warn(`\nUnauthorized access attempt to ${req.url} - No token provided`);
             return reply.code(401).send({ error: "You must be logged in to access this resource." })
         }
 
@@ -31,11 +33,13 @@ export function requireRole(allowedRoles: Role[]) {
             }
 
             if (!allowedRoles.includes(decoded.role)) {
+                logger.warn(`\nUnauthorized access attempt to ${req.url} - Insufficient role`);
                 return reply.code(403).send({ error: `Forbidden: Requires role(s): ${allowedRoles.join(", ")}` })
             }
 
             req.user = decoded // Attach user info to request object
         } catch {
+            logger.error(`\nInvalid token provided for access to ${req.url}`);
             return reply.code(401).send({ error: "Unauthorized: Invalid token" })
         }
     }

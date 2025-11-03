@@ -3,20 +3,32 @@ import { FastifyRequest, FastifyReply } from "fastify"
 import { razorpay } from "../utils/razorpay"
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
+import { logger } from "@/lib/logger"
+
+interface Payload {
+    paymentFor: "SERVICE" | "PRODUCT" | "SUBSCRIPTION" | "OTHER"
+    serviceId?: string
+    subscriptionPlanId?: string
+    products?: { productId: string; quantity: number }[]
+}
 
 export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-        const { userId, purpose, productId, serviceId, subscriptionPlanId } = req.body as any
+        const userId = req.user?.userId
+        if (!userId) return reply.code(401).send({ error: "Unauthorized" })
 
-        // Map purpose to Prisma enum
-        let prismaPurpose: "SERVICE_BOOKING" | "PRODUCT_PURCHASE" | "SUBSCRIPTION" | "OTHER"
+        const { paymentFor, serviceId, subscriptionPlanId, products } = req.body as Payload
 
-        switch (purpose) {
-            case "SERVICE":
-                prismaPurpose = "SERVICE_BOOKING"
-                break
+        let prismaPurpose: "SERVICE_BOOKING" | "PRODUCT_PURCHASE" | "SUBSCRIPTION" | "OTHER" = "OTHER"
+        let totalAmount = 0
+
+        // Determine purpose
+        switch (paymentFor) {
             case "PRODUCT":
                 prismaPurpose = "PRODUCT_PURCHASE"
+                break
+            case "SERVICE":
+                prismaPurpose = "SERVICE_BOOKING"
                 break
             case "SUBSCRIPTION":
                 prismaPurpose = "SUBSCRIPTION"
@@ -25,91 +37,233 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
                 return reply.code(400).send({ error: "Invalid payment purpose" })
         }
 
-        // Fetch the amount based on purpose
-        let amount = 0
+        // Product purchase flow
+        let productItems: { productId: string; quantity: number; price: number; subtotal: number }[] = []
 
-        if (purpose === "PRODUCT") {
-            const product = await prisma.product.findUnique({
-                where: { id: productId },
-            })
-            if (!product) return reply.code(404).send({ error: "Product not found" })
-            amount = product.price
+        if (paymentFor === "PRODUCT") {
+            if (!products || !Array.isArray(products) || products.length === 0)
+                return reply.code(400).send({ error: "Products array is required for product purchase" })
+
+            const productIds = products.map((p: any) => p.productId)
+            const dbProducts = await prisma.product.findMany({ where: { id: { in: productIds } } })
+
+            if (dbProducts.length === 0)
+                return reply.code(404).send({ error: "No valid products found" })
+
+            for (const item of products) {
+                const product = dbProducts.find(p => p.id === item.productId)
+                if (!product)
+                    return reply.code(400).send({ error: `Invalid product ID: ${item.productId}` })
+
+                const quantity = item.quantity && item.quantity > 0 ? item.quantity : 1
+                const subtotal = Number(product.price) * quantity
+
+                totalAmount += subtotal
+
+                productItems.push({
+                    productId: product.id,
+                    quantity,
+                    price: Number(product.price),
+                    subtotal
+                })
+            }
         }
 
-        if (purpose === "SERVICE") {
-            const service = await prisma.serviceDefinition.findUnique({
-                where: { id: serviceId },
-            })
+        // Service booking flow
+        if (paymentFor === "SERVICE") {
+            if (!serviceId) return reply.code(400).send({ error: "Service ID is required" })
+
+            const service = await prisma.serviceDefinition.findUnique({ where: { id: serviceId } })
             if (!service) return reply.code(404).send({ error: "Service not found" })
-            amount = service.price ?? 0
+
+            totalAmount = Number(service.price ?? 0)
         }
 
-        if (purpose === "SUBSCRIPTION") {
-            const plan = await prisma.subscriptionPlan.findUnique({
-                where: { id: subscriptionPlanId },
-            })
+        // Subscription plan flow
+        if (paymentFor === "SUBSCRIPTION") {
+            if (!subscriptionPlanId) return reply.code(400).send({ error: "Subscription plan ID is required" })
+
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { id: subscriptionPlanId } })
             if (!plan) return reply.code(404).send({ error: "Subscription plan not found" })
-            amount = plan.price
+
+            totalAmount = Number(plan.price)
         }
 
-        if (amount <= 0) {
-            return reply.code(400).send({ error: "Invalid amount for payment" })
+        if (totalAmount <= 0)
+            return reply.code(400).send({ error: "Invalid total amount" })
+
+        // Ensure Razorpay secret/config present
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            logger.error("Razorpay credentials missing")
+            return reply.code(500).send({ error: "Payment provider misconfigured" })
         }
 
         // Create Razorpay order
-        const options = {
-            amount: Math.round(amount * 100), // convert to paisa
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(totalAmount * 100),
             currency: "INR",
-            receipt: `rcpt_${Date.now()}`,
-        }
-
-        const order = await razorpay.orders.create(options)
-
-        // Save PaymentOrder in DB
-        const paymentOrder = await prisma.paymentOrder.create({
-            data: {
-                razorpayOrderId: order.id,
-                amount,
-                userId,
-                purpose: prismaPurpose,
-                productId: productId ?? null,
-                bookingId: serviceId ?? null,
-                subscriptionId: subscriptionPlanId ?? null,
-            },
+            receipt: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
         })
 
-        return reply.code(201).send({ order, paymentOrder })
-    } catch (err: unknown) {
-        req.log.error(err)
-        const details = err instanceof Error ? err.message : String(err)
+        // Create PaymentOrder record (Single DB op; nested items created atomically)
+        const paymentOrder = await prisma.paymentOrder.create({
+            data: {
+                razorpayOrderId: razorpayOrder.id,
+                amount: totalAmount,
+                userId,
+                purpose: prismaPurpose,
+                bookingId: paymentFor === "SERVICE" ? serviceId : null,
+                subscriptionId: paymentFor === "SUBSCRIPTION" ? subscriptionPlanId : null,
+                items: paymentFor === "PRODUCT"
+                    ? {
+                        create: productItems.map(p => ({
+                            productId: p.productId,
+                            quantity: p.quantity,
+                            price: p.price,
+                            subtotal: p.subtotal
+                        }))
+                    }
+                    : undefined
+            },
+            include: {
+                items: { include: { product: true } }
+            }
+        })
+
+        return reply.code(201).send({
+            success: true,
+            message: "Order created successfully",
+            key: process.env.RAZORPAY_KEY_ID,
+            razorpayOrder,
+            paymentOrder
+        })
+
+    } catch (error: unknown) {
+        logger.error(error)
+        const details = error instanceof Error ? error.message : String(error)
         return reply.code(500).send({ error: "Failed to create order", details })
     }
 }
-
 export const verifyPayment = async (req: FastifyRequest, reply: FastifyReply) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body as any
+    try {
+        const { orderId, paymentId, signature } = req.body as any;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id
-    const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-        .update(body.toString())
-        .digest("hex")
+        if (!orderId || !paymentId || !signature) {
+            return reply.code(400).send({ success: false, message: "Missing required fields" });
+        }
 
-    if (expectedSignature === razorpay_signature) {
-        const transaction = await prisma.paymentTransaction.create({
-            data: {
-                orderId: razorpay_order_id,
-                razorpayPaymentId: razorpay_payment_id,
-                razorpaySignature: razorpay_signature,
-                status: "SUCCESS",
-            },
+        if (!process.env.RAZORPAY_KEY_SECRET) {
+            logger.error("Razorpay secret missing")
+            return reply.code(500).send({ success: false, message: "Payment provider misconfigured" })
+        }
+
+        // Verify Razorpay signature
+        const body = orderId + "|" + paymentId;
+        const expectedSignature = crypto
+            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+            .update(body)
+            .digest("hex");
+
+        if (expectedSignature !== signature) {
+            return reply.code(400).send({ success: false, message: "Signature verification failed" });
+        }
+
+        // Get internal PaymentOrder record
+        const paymentOrder = await prisma.paymentOrder.findUnique({
+            where: { razorpayOrderId: orderId },
+        });
+
+        if (!paymentOrder) {
+            return reply.code(404).send({ success: false, message: "Payment order not found" });
+        }
+
+        // Idempotency: if a successful transaction already exists, return success
+        const existingSuccess = await prisma.paymentTransaction.findFirst({
+            where: { orderId: paymentOrder.id, status: "SUCCESS" }
         })
-        await prisma.paymentOrder.update({
-            where: { razorpayOrderId: razorpay_order_id },
-            data: { status: "SUCCESS" },
+        if (existingSuccess) {
+            return reply.send({ success: true, message: "Payment already recorded", transaction: existingSuccess })
+        }
+
+        // Also prevent processing the same razorpay payment twice
+        const existingByRzpId = await prisma.paymentTransaction.findFirst({
+            where: { razorpayPaymentId: paymentId }
         })
-        return reply.send({ success: true, transaction })
-    } else {
-        return reply.code(400).send({ success: false, message: "Signature verification failed" })
+        if (existingByRzpId) {
+            return reply.send({ success: true, message: "Payment already recorded", transaction: existingByRzpId })
+        }
+
+        // Fetch payment details from Razorpay to validate amount & capture status
+        const razorpayPayment = await razorpay.payments.fetch(paymentId);
+
+        // Razorpay returns amount in paise
+        const expectedPaise = Math.round(Number(paymentOrder.amount) * 100);
+        if (Number(razorpayPayment.amount) !== expectedPaise) {
+            logger.error("Payment amount mismatch", { expectedPaise, received: razorpayPayment.amount, orderId, paymentId })
+            return reply.code(400).send({ success: false, message: "Payment amount mismatch" });
+        }
+
+        // Ensure payment captured or status indicates success
+        const rzpStatus = (razorpayPayment.status || "").toString().toLowerCase();
+        if (rzpStatus !== "captured" && rzpStatus !== "authorized") {
+            logger.error("Razorpay payment not captured/authorized", { status: razorpayPayment.status, orderId, paymentId })
+            return reply.code(400).send({ success: false, message: "Payment not captured" });
+        }
+
+        const amountPaid = Number(razorpayPayment.amount) / 100.0;
+
+        // Use transaction: create transaction record and update order status atomically
+        const [transaction] = await prisma.$transaction([
+            prisma.paymentTransaction.create({
+                data: {
+                    orderId: paymentOrder.id,
+                    razorpayPaymentId: paymentId,
+                    razorpaySignature: signature,
+                    status: "SUCCESS",
+                    method: razorpayPayment.method ?? undefined,
+                    amountPaid: amountPaid,
+                    capturedAt: new Date(),
+                },
+            }),
+            prisma.paymentOrder.update({
+                where: { id: paymentOrder.id },
+                data: { status: "SUCCESS" },
+            })
+        ])
+
+        return reply.send({ success: true, message: "Payment verified", transaction });
+    } catch (err) {
+        logger.error(err);
+        const details = err instanceof Error ? err.message : String(err);
+        return reply.code(500).send({ error: "Payment verification failed", details });
+    }
+};
+
+export const cancelPayment = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { orderId } = req.body as any
+    // verify with user id for security
+    const userId = req.user?.userId
+    if (!userId) return reply.code(401).send({ error: "Unauthorized" })
+
+    try {
+        if (!orderId) return reply.code(400).send({ error: "orderId is required" })
+
+        // Find order first, ensure it belongs to user, then update. Use a transaction for safety.
+        const paymentOrder = await prisma.paymentOrder.findUnique({ where: { razorpayOrderId: orderId } })
+        if (!paymentOrder) return reply.code(404).send({ error: "Payment order not found" })
+        if (paymentOrder.userId !== userId) return reply.code(403).send({ error: "Forbidden" })
+
+        await prisma.$transaction([
+            prisma.paymentOrder.update({
+                where: { id: paymentOrder.id },
+                data: { status: "CANCELLED", }
+            })
+        ])
+
+        return reply.send({ success: true })
+    } catch (err: unknown) {
+        req.log.error(err)
+        const details = err instanceof Error ? err.message : String(err)
+        return reply.code(500).send({ error: "Failed to cancel payment", details })
     }
 }

@@ -1,6 +1,5 @@
-// app/cart/page.tsx
 "use client";
-import React from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { Plus, Minus, Trash2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -8,40 +7,83 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/layout/Footer';
+import { useRazorpayPayment } from '@/hooks/usePayment';
+
+const PaymentProcessingModal: React.FC<{ open: boolean; total?: number }> = ({ open, total }) => {
+    if (!open) return null;
+    return (
+        <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Payment processing"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+            <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-6 text-center">
+                <div className="flex flex-col items-center gap-4">
+                    <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900">Processing your payment</h3>
+                    <p className="text-sm text-gray-600">
+                        Please do not refresh, close the tab, or press the back button. This may interrupt the payment.
+                    </p>
+                    {typeof total === 'number' && (
+                        <p className="text-sm text-gray-800 font-medium">Amount: {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(total)}</p>
+                    )}
+                    <p className="text-xs text-gray-500">You will be redirected when payment completes.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const CartPage: React.FC = () => {
     const {
         cartItems,
         updateQuantity,
         removeFromCart,
+        addToCart,
+        cartCount,
+        clearCart,
         getTotalAmount,
         getTotalMRP,
         getTotalDiscount,
     } = useCart();
+    const { isProcessing, startPayment } = useRazorpayPayment();
 
     const { user } = useAuth();
     const router = useRouter();
 
-    const handleQuantityChange = (id: string, newQuantity: number) => {
-        updateQuantity(id, newQuantity);
-    };
+    // compute derived values with useMemo
+    const totalQuantity = useMemo(() => {
+        return cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    }, [cartItems]);
 
-    const handleDelete = (id: string, name: string) => {
-        removeFromCart(id);
-        toast.success(`Removed ${name} from cart`);
-    };
+    // useCallback for stable handlers
+    const handleQuantityChange = useCallback((id: string, newQuantity: number) => {
+        const qty = Math.max(1, Math.floor(newQuantity));
+        updateQuantity(id, qty);
+    }, [updateQuantity]);
 
-    const handleShare = (name: string) => {
-        toast.info(`Sharing ${name} (Feature not implemented yet)`);
-    };
-
-    const handlePlaceOrder = () => {
+    const handlePlaceOrder = useCallback(() => {
         if (cartItems.length === 0) return;
-        toast.success("Order placed successfully!", {
-            description: "You will receive a confirmation email shortly.",
+        if (isProcessing) return;
+        startPayment({
+            paymentFor: "PRODUCT",
+            products: cartItems.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+            })),
+            onSuccess: (data) => {
+                toast.success("Payment successful! Order placed.");
+                router.push('/orders');
+            },
+            onError: (error) => {
+                toast.error(`Payment failed: ${error.message}`);
+            },
         });
-        router.push('/');
-    };
+    }, [cartItems, isProcessing, startPayment, router]);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -79,15 +121,122 @@ const CartPage: React.FC = () => {
         );
     };
 
+    // keep share/delete callbacks stable
+    const handleShare = useCallback(async (name: string, id: string): Promise<void> => {
+        const url = `${window.location.origin}/products/${id}`;
+        const text = `Check out "${name}" on ClearDrip:`;
+        try {
+            if (navigator.share) {
+                await navigator.share({ title: name, text, url });
+                toast.success('Shared successfully');
+                return;
+            }
+            const shareString = `${text} ${url}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(shareString);
+                toast.success('Link copied to clipboard');
+                return;
+            }
+            const input = document.createElement('input');
+            input.value = shareString;
+            document.body.appendChild(input);
+            input.select();
+            if (document.execCommand && document.execCommand('copy')) {
+                toast.success('Link copied to clipboard');
+            } else {
+                toast.error('Unable to copy link');
+            }
+            input.remove();
+        } catch (err: any) {
+            if (err && (err.name === 'AbortError' || err.message === 'Share canceled')) {
+                return;
+            }
+            toast.error(`Could not share: ${err?.message ?? 'unknown error'}`);
+        }
+    }, []);
+
+    const handleDelete = useCallback(async (id: string, name: string): Promise<void> => {
+        const itemToRemove = cartItems.find(i => i.id === id);
+        if (!itemToRemove) {
+            toast.error('Item not found in cart');
+            return;
+        }
+
+        const confirmed = typeof window !== 'undefined' ? window.confirm(`Remove "${name}" from your cart?`) : true;
+        if (!confirmed) return;
+
+        try {
+            removeFromCart(id);
+            toast.success(`Removed "${name}" from cart`, {
+                action: {
+                    label: 'Undo',
+                    onClick: () => {
+                        const restoreItem = { ...itemToRemove, quantity: itemToRemove.quantity ?? 1 };
+                        try {
+                            addToCart(restoreItem);
+                            toast.success(`Restored "${name}"`);
+                        } catch (err) {
+                            toast.error(`Could not restore "${name}"`);
+                        }
+                    }
+                }
+            });
+        } catch (err: any) {
+            toast.error(`Could not remove item: ${err?.message ?? 'unknown error'}`);
+        }
+    }, [cartItems, removeFromCart, addToCart]);
+
+    // block refresh/back navigation while payment is processing
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        let addedState = false;
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            // Chrome requires returnValue to be set
+            e.returnValue = '';
+            return '';
+        };
+
+        const handlePopState = () => {
+            if (isProcessing) {
+                // Re-push the current state so back button doesn't navigate away
+                window.history.pushState(null, document.title, window.location.href);
+                toast.error('Payment is processing — please do not navigate away.');
+            }
+        };
+
+        if (isProcessing) {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            // push a state so popstate can be detected and blocked
+            try {
+                window.history.pushState(null, document.title, window.location.href);
+                addedState = true;
+            } catch { /* ignore */ }
+            window.addEventListener('popstate', handlePopState);
+        }
+
+        return () => {
+            if (addedState) {
+                // try to clean up the extra history state by going back once (only if it's still the pushed state)
+                // don't force navigation, only attempt cleanup; it's safe to ignore errors
+                try { window.history.back(); } catch { }
+            }
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [isProcessing]);
+
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* show modal overlay when processing */}
+            <PaymentProcessingModal open={isProcessing} total={getTotalAmount()} />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
                 {cartItems.length === 0 ? (
-                    /* Empty Cart */
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                        <div className="w-32 h-32 mb-8 mx-auto">
-                            <svg viewBox="0 0 200 150" className="w-full h-full text-blue-500">
+                        <div className="w-36 h-36 mb-8 mx-auto rounded-xl bg-white shadow-md flex items-center justify-center">
+                            <svg viewBox="0 0 200 150" className="w-20 h-20 text-blue-600">
                                 <path
                                     d="M20 40 L40 40 L50 100 L160 100 L170 40 L60 40"
                                     stroke="currentColor"
@@ -103,208 +252,156 @@ const CartPage: React.FC = () => {
                                 />
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-3">
                             Your cart is currently empty
                         </h2>
-                        <p className="text-gray-600 mb-8">
-                            Browse products, services to begin
+                        <p className="text-gray-600 mb-6 max-w-md">
+                            Browse products and services to begin — your selected items will appear here.
                         </p>
                         <Button
                             onClick={() => router.push('/')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-base"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base rounded-md"
+                            aria-label="Continue shopping"
                         >
                             Continue Shopping
                         </Button>
                     </div>
                 ) : (
-                    /* Cart with Items */
-                    <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-                        {/* Left Column - Cart Items */}
-                        <div className="lg:col-span-2">
-                            {/* Delivery Info */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Delivery/address card */}
                             {user && (
-                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <p className="text-base font-medium text-gray-700 mb-3">
-                                                <span className="font-semibold">Deliver to:</span> {getUserDisplayName()}
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm text-gray-600 mb-1">
+                                                <span className="font-semibold text-gray-800">Deliver to:</span> {getUserDisplayName()}
                                             </p>
-                                            <div className="mb-4">
-                                                {getFormattedDeliveryAddress()}
-                                            </div>
-                                            <p className="text-base font-medium text-gray-900">
-                                                Expected delivery by {getExpectedDeliveryDate()}
+                                            <div className="mb-2 text-sm text-gray-700">{getFormattedDeliveryAddress()}</div>
+                                            <p className="text-sm text-gray-900">
+                                                Expected delivery by <span className="font-medium">{getExpectedDeliveryDate()}</span>
                                             </p>
                                         </div>
-                                        <Button
-                                            variant="link"
-                                            className="text-blue-600 font-medium hover:text-blue-700"
-                                        >
-                                            Change
-                                        </Button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Cart Items */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                                {cartItems.map((item, index) => (
-                                    <div key={item.id} className={`p-6 ${index < cartItems.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                                        <div className="flex gap-6">
-                                            {/* Product Image */}
-                                            <div className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-lg overflow-hidden">
-                                                {item.image ? (
-                                                    <img
-                                                        src={item.image}
-                                                        alt={item.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                        <span className="text-gray-400 text-sm">No Image</span>
-                                                    </div>
-                                                )}
+                            {/* Cart items list */}
+                            <div className="space-y-4">
+                                {cartItems.map((item) => (
+                                    <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex gap-4">
+                                        <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.name} className="object-cover w-full h-full" />
+                                            ) : (
+                                                <div className="text-sm text-gray-400">No image</div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 flex flex-col">
+                                            <div className="flex justify-between items-start gap-2">
+                                                <div className="min-w-0">
+                                                    <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
+                                                    {/* {item.name && <p className="text-xs text-gray-600 truncate">{item.subtitle}</p>} */}
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-sm font-medium text-gray-900">{formatPrice(item.price)}</div>
+                                                    {item.originalPrice > item.price && (
+                                                        <div className="text-xs text-gray-500 line-through">{formatPrice(item.originalPrice)}</div>
+                                                    )}
+                                                </div>
                                             </div>
 
-                                            {/* Product Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h3 className="font-semibold text-gray-900 text-xl">
-                                                        {item.name}
-                                                    </h3>
+                                            <div className="mt-3 flex items-center justify-between gap-4">
+                                                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleShare(item.name)}
-                                                        className="p-2 text-gray-400 hover:text-gray-600"
+                                                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
+                                                        className={`p-2 hover:bg-gray-100 ${item.quantity <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        aria-label={`Decrease quantity for ${item.name}`}
+                                                        disabled={item.quantity <= 1}
                                                     >
-                                                        <Share2 className="w-5 h-5" />
+                                                        <Minus className="w-4 h-4" />
+                                                    </Button>
+                                                    <span className="px-4 py-2 text-sm font-medium border-l border-r border-gray-300 min-w-[56px] text-center">
+                                                        {item.quantity}
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
+                                                        className="p-2 hover:bg-gray-100"
+                                                        aria-label={`Increase quantity for ${item.name}`}
+                                                    >
+                                                        <Plus className="w-4 h-4" />
                                                     </Button>
                                                 </div>
 
-                                                {/* Review count if available */}
-                                                {item.reviewCount && (
-                                                    <p className="text-sm text-gray-600 mb-3">
-                                                        {item.reviewCount}+ bought in past month
-                                                    </p>
-                                                )}
-
-                                                {/* Price */}
-                                                <div className="mb-4">
-                                                    <div className="flex items-center gap-2 text-lg">
-                                                        <span className="font-semibold text-blue-600">
-                                                            Pay {formatPrice(item.price)}
-                                                        </span>
-                                                        {item.originalPrice > item.price && (
-                                                            <span className="text-gray-500">instead of</span>
-                                                        )}
-                                                    </div>
-                                                    {item.originalPrice > item.price && (
-                                                        <div className="flex items-center gap-2 text-base">
-                                                            <span className="text-gray-500 line-through">
-                                                                {formatPrice(item.originalPrice)}
-                                                            </span>
-                                                            <span className="text-green-600 font-medium">
-                                                                — You save {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}%!
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Rating if available */}
-                                                {item.rating && (
-                                                    <div className="flex items-center gap-1 mb-4">
-                                                        <span className="bg-green-500 text-white text-sm px-2 py-1 rounded flex items-center gap-1">
-                                                            <span>⭐</span>
-                                                            <span>{item.rating}/5</span>
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {/* Quantity Controls */}
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center border border-gray-300 rounded-lg">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                                            className="p-3 hover:bg-gray-100 rounded-l-lg border-none"
-                                                        >
-                                                            <Minus className="w-4 h-4" />
-                                                        </Button>
-                                                        <span className="px-4 py-3 text-base font-medium border-l border-r border-gray-300 min-w-[60px] text-center">
-                                                            {item.quantity}
-                                                        </span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                                            className="p-3 hover:bg-gray-100 rounded-r-lg border-none"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                    <p className="text-sm text-gray-500">
-                                                        {item.quantity} item{item.quantity > 1 ? 's' : ''} added in cart
-                                                    </p>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" onClick={() => handleShare(item.name, item.id)} className="text-sm py-1 px-2" aria-label={`Share ${item.name}`}>
+                                                        <Share2 className="w-4 h-4 mr-2" /> Share
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => handleDelete(item.id, item.name)}
+                                                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-sm py-1 px-2"
+                                                        aria-label={`Remove ${item.name} from cart`}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete
+                                                    </Button>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* Action Buttons */}
-                                        <div className="flex gap-4 mt-6">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => handleDelete(item.id, item.name)}
-                                                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 py-2"
-                                            >
-                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                Delete
-                                            </Button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Right Column - Price Summary */}
-                        <div className="lg:col-span-1 mt-8 lg:mt-0">
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
-                                <h3 className="font-semibold text-gray-900 text-xl mb-6">
+                        <div className="lg:col-span-1">
+                            <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-5 md:sticky md:top-6">
+                                <h3 className="font-semibold text-gray-900 text-lg mb-4">
                                     Price Details ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} Item{cartItems.reduce((sum, item) => sum + item.quantity, 0) > 1 ? 's' : ''})
                                 </h3>
 
-                                <div className="space-y-4">
-                                    <div className="flex justify-between text-base">
-                                        <span className="text-gray-600">Total MRP:</span>
+                                <div className="space-y-3 text-sm text-gray-700">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total MRP</span>
                                         <span className="font-medium">{formatPrice(getTotalMRP())}</span>
                                     </div>
 
                                     {getTotalDiscount() > 0 && (
-                                        <div className="flex justify-between text-base">
-                                            <span className="text-gray-600">Discount on MRP:</span>
-                                            <span className="font-medium text-green-600">
-                                                -{formatPrice(getTotalDiscount())}
-                                            </span>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Discount on MRP</span>
+                                            <span className="font-medium text-green-600">-{formatPrice(getTotalDiscount())}</span>
                                         </div>
                                     )}
 
                                     <div className="border-t border-gray-200 pt-4">
-                                        <div className="flex justify-between">
-                                            <span className="font-semibold text-gray-900 text-lg">Total Amount:</span>
-                                            <span className="font-bold text-2xl text-gray-900">
-                                                {formatPrice(getTotalAmount())}
-                                            </span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-semibold text-gray-900">Total Amount</span>
+                                            <span className="font-bold text-2xl text-gray-900">{formatPrice(getTotalAmount())}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Place Order Button */}
                                 <Button
                                     onClick={handlePlaceOrder}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded-lg mt-6"
+                                    disabled={isProcessing || cartItems.length === 0}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold rounded-md mt-6 flex items-center justify-center gap-3"
+                                    aria-label="Place order"
                                 >
-                                    Place Order
+                                    {isProcessing ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                            </svg>
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <span>Place Order</span>
+                                    )}
                                 </Button>
                             </div>
                         </div>

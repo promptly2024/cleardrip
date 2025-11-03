@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import Navbar from "@/components/homepage/navbar";
 import { CartProvider } from "@/context/CartContext";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "",
-  description: "",
+  title: "Cleardrip - Smart Water Management",
+  description: "Your trusted partner for smart water health monitoring and RO services.",
 };
 
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
       </head>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
