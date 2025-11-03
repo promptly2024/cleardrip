@@ -5,7 +5,8 @@ export const sendPasswordResetEmail = async (
     resetToken: string,
     userName: string
 ) => {
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    // Rename the url before going to production
+    const resetUrl = `http://localhost:3000/user/reset-password?token=${resetToken}`;
     
     const subject = 'Password Reset Request - ClearDrip';
     
