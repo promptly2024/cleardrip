@@ -10,6 +10,7 @@ import notificationRoute from './routes/notification.route'
 import './workers/notification.worker'
 import subscriptionRoutes from './routes/subscription.route'
 import contactUsRoutes from './routes/contactus.route'
+import paymentRoutes from './routes/payment.route'
 
 export const buildApp = async (): Promise<FastifyInstance> => {
     const app = Fastify({ logger: true })
@@ -23,6 +24,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     app.register(notificationRoute, { prefix: '/api' })
     app.register(subscriptionRoutes, { prefix: '/api' })
     app.register(contactUsRoutes, { prefix: '/api' })
+    app.register(paymentRoutes, { prefix: '/api/payment' })
 
     return app
 }

@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { ServiceDefinitionInput, ServiceInput, SlotInput } from "@/schemas/services.schema";
 
 export const bookService = async (data: ServiceInput, userId: string) => {
+    // check if slot is already booked
+    const existingBooking = await prisma.serviceBooking.findFirst({
+        where: {
+            slotId: data.slotId,
+        },
+    });
+    if (existingBooking) {
+        throw new Error("Slot is already booked");
+    }
     const service = await prisma.serviceBooking.create({
         data: {
             ...data,

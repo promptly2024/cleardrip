@@ -18,21 +18,22 @@ model User {
   addressId String?  @unique
   password  String
 
-  fcmToken String?
+  fcmToken       String?
   whatsappNumber String?
 
   isEmailVerified Boolean @default(false)
   isPhoneVerified Boolean @default(false)
 
-  loyaltyStatus LoyaltyStatus? @default(BRONZE)
+  loyaltyStatus LoyaltyStatus?   @default(BRONZE)
   otpSessions   OTPSession[]
-  bookings        ServiceBooking[]
+  bookings      ServiceBooking[]
   subscriptions Subscription[]
   tdsLogs       TDSLog[]
   notifications Notification[]
   whatsappLogs  WhatsAppLog[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  PaymentOrder  PaymentOrder[]
 }
 
 model Address {
@@ -54,13 +55,13 @@ enum LoyaltyStatus {
 }
 
 model Admin {
-  id        String    @id @default(uuid())
+  id        String              @id @default(uuid())
   name      String
-  email     String    @unique
+  email     String              @unique
   password  String // hashed password
-  role      AdminRole @default(STAFF)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  role      AdminRole           @default(STAFF)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
   services  ServiceDefinition[]
 }
 
@@ -70,63 +71,65 @@ enum AdminRole {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  price       Float
-  description String?
-  image       String?
-  inventory   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String         @id @default(uuid())
+  name         String
+  price        Float
+  description  String?
+  image        String?
+  inventory    Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  PaymentOrder PaymentOrder[]
 }
 
 model ServiceDefinition {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String?
   type        ServiceType
   image       String?
   price       Float?
 
-  duration    Int?
-  isActive    Boolean @default(true)
+  duration Int?
+  isActive Boolean @default(true)
 
-  createdBy   Admin    @relation(fields: [adminId], references: [id])
-  adminId     String
+  createdBy Admin  @relation(fields: [adminId], references: [id])
+  adminId   String
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  bookings    ServiceBooking[]
+  bookings ServiceBooking[]
 }
 
 model ServiceBooking {
-  id               String          @id @default(uuid())
-  user             User            @relation(fields: [userId], references: [id])
-  userId           String
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 
-  service          ServiceDefinition @relation(fields: [serviceId], references: [id])
-  serviceId        String
+  service   ServiceDefinition @relation(fields: [serviceId], references: [id])
+  serviceId String
 
-  slot             Slot            @relation(fields: [slotId], references: [id])
-  slotId           String
+  slot   Slot   @relation(fields: [slotId], references: [id])
+  slotId String
 
-  status           ServiceStatus   @default(PENDING)
-  beforeImageUrl   String?
-  afterImageUrl    String?
+  status         ServiceStatus @default(PENDING)
+  beforeImageUrl String?
+  afterImageUrl  String?
 
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  PaymentOrder PaymentOrder[]
 }
 
 model Slot {
-  id         String           @id @default(uuid())
-  startTime  DateTime
-  endTime    DateTime
-  bookings   ServiceBooking[]
+  id        String           @id @default(uuid())
+  startTime DateTime
+  endTime   DateTime
+  bookings  ServiceBooking[]
 
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ServiceType {
@@ -144,10 +147,10 @@ enum ServiceStatus {
 
 model SubscriptionPlan {
   id          String   @id @default(uuid())
-  name        String   // e.g. "Monthly", "Annual", "Premium"
-  description String?  // optional details about the plan
-  price       Float    // cost of the plan
-  duration    Int      // in days (e.g. 30 = monthly, 365 = yearly)
+  name        String // e.g. "Monthly", "Annual", "Premium"
+  description String? // optional details about the plan
+  price       Float // cost of the plan
+  duration    Int // in days (e.g. 30 = monthly, 365 = yearly)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -156,17 +159,18 @@ model SubscriptionPlan {
 }
 
 model Subscription {
-  id             String   @id @default(uuid())
-  user           User     @relation(fields: [userId], references: [id])
-  userId         String
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 
-  plan           SubscriptionPlan @relation(fields: [planId], references: [id])
-  planId         String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId String
 
-  startDate      DateTime
-  endDate        DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  PaymentOrder PaymentOrder[]
 }
 
 model TDSLog {
@@ -240,4 +244,58 @@ model ContactMessage {
   message   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PaymentOrder {
+  id              String         @id @default(uuid())
+  razorpayOrderId String         @unique // Razorpay-generated order_id
+  amount          Float
+  currency        String         @default("INR")
+  status          PaymentStatus  @default(PENDING)
+  purpose         PaymentPurpose // booking, subscription, product purchase
+  user            User           @relation(fields: [userId], references: [id])
+  userId          String
+
+  booking   ServiceBooking? @relation(fields: [bookingId], references: [id])
+  bookingId String?
+
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
+
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  transaction PaymentTransaction?
+}
+
+model PaymentTransaction {
+  id           String       @id @default(uuid())
+  paymentOrder PaymentOrder @relation(fields: [orderId], references: [id])
+  orderId      String       @unique
+
+  razorpayPaymentId String? // Razorpay-generated payment_id
+  razorpaySignature String? // for verification
+  status            PaymentStatus
+  method            String? // UPI, CARD, WALLET, etc.
+  amountPaid        Float?
+  capturedAt        DateTime?
+  errorReason       String?
+
+  createdAt DateTime @default(now())
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PaymentPurpose {
+  SERVICE_BOOKING
+  SUBSCRIPTION
+  PRODUCT_PURCHASE
+  OTHER
 }
