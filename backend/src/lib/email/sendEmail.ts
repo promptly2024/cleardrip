@@ -3,7 +3,6 @@ import { SMTP_HOST, SMTP_PASSWORD, SMTP_USER, FROM_EMAIL, FROM_NAME } from "../.
 import nodemailer from "nodemailer";
 
 const sendEmail = async (to: string, subject: string, message: string, html: string) => {
-
     const transporter = nodemailer.createTransport({
         host: SMTP_HOST,
         port: 587,
@@ -15,29 +14,40 @@ const sendEmail = async (to: string, subject: string, message: string, html: str
     });
 
     try {
-        const uniqueId = Date.now(); // Unique ID for email
+        // Verify connection
+        await transporter.verify();
+        console.log("Gmail SMTP connection verified");
+
+        const uniqueId = Date.now();
         const info = await transporter.sendMail({
             from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
             to: to,
             subject: subject,
             text: message,
-            html: message,
+            html: html || message,
             messageId: uniqueId.toString(),
-
             headers: {
                 "X-Entity-Ref-ID": uniqueId.toString(),
                 "X-Entity-Ref-Type": "email",
             },
             date: new Date(),
         });
-        console.log("Message sent: %s", info.messageId);
 
-    } catch (error) {
-        console.error("Error sending email:", error);
-        return { message: "Email sending failed", error: error };
+        console.log("Email sent successfully:", info.messageId);
+        return { 
+            message: "Email sent successfully", 
+            messageId: info.messageId,
+            error: null 
+        };
+
+    } catch (error: any) {
+        console.error("Error sending email:", error.message);
+        return { 
+            message: "Email sending failed", 
+            error: error.message,
+            code: error.code 
+        };
     }
-
-    return { message: "Email sent successfully", error: "" };
 };
 
 export default sendEmail;

@@ -238,10 +238,6 @@ export default function ProductsPage() {
                             className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                         />
                     </div>
-                    <Button variant="outline" className="flex items-center gap-2 border-gray-200 hover:border-gray-300">
-                        <Filter className="h-4 w-4" />
-                        Filters
-                    </Button>
                 </div>
 
                 {/* Error State */}

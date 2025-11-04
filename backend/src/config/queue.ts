@@ -1,10 +1,13 @@
-// File: backend/src/config/queue.ts
 import { ConnectionOptions, DefaultJobOptions } from 'bullmq';
-import { REDIS_HOST, REDIS_PORT } from './env';
+import { REDIS_HOST, REDIS_PORT, REDIS_URL } from './env';
 
 export const redisConnection: ConnectionOptions = {
     host: REDIS_HOST,
     port: REDIS_PORT,
+    password: REDIS_URL.split('@')[0].split(':').pop(), 
+    tls: {}, // Required for Upstash Redis
+    maxRetriesPerRequest: null, // Recommended for BullMQ
+    enableReadyCheck: false,
 }
 
 export const defaultQueueOptions: DefaultJobOptions = {

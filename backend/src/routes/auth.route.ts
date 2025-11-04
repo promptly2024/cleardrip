@@ -9,9 +9,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.post("/signup", signupHandler)
     fastify.post("/signin", signinHandler)
     fastify.post("/signout", signoutHandler)
-    fastify.post("/user/forgot-password", forgotPasswordHandler)
-    fastify.post("/user/reset-password", resetPasswordHandler)
-    fastify.get("/user/verify-reset-token", verifyResetTokenHandler);
+    fastify.post("/forgot-password", forgotPasswordHandler)
+    fastify.post("/reset-password", resetPasswordHandler)
+    fastify.get("/verify-reset-token", verifyResetTokenHandler);
     fastify.put("/user/fcm-token", { preHandler: requireRole(["USER"]) }, updateFCMTokenHandler)
 
     // Authenticated user routes

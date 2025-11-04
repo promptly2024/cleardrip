@@ -37,7 +37,7 @@ function ResetPasswordContent() {
 
             try {
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_URL}/user/verify-reset-token?token=${token}`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-reset-token?token=${token}`,
                     { withCredentials: true }
                 );
                 setTokenValid(response.data.valid);
@@ -87,7 +87,7 @@ function ResetPasswordContent() {
 
         try {
             const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/user/reset-password`,
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`,
                 { token, newPassword },
                 { withCredentials: true }
             );
