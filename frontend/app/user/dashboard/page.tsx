@@ -8,10 +8,11 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ProfileComponent from '@/components/dashboard/profile';
-import SettingsPage from '@/components/dashboard/settings';
+import ProfileComponent from '@/components/dashboard/Profile';
+import SettingsPage from '@/components/dashboard/Settings';
 import MyServices from '@/components/dashboard/MyServices';
 import { OverviewTab } from '@/components/dashboard/OverviewTab';
+import Payment from '@/components/dashboard/Payment';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -71,7 +72,7 @@ const WaterCareDashboard = () => {
       case 'tds':
         return <Card><CardHeader><CardTitle>Water TDS</CardTitle></CardHeader><CardContent><p>Live water TDS.</p></CardContent></Card>;
       case 'bills':
-        return <Card><CardHeader><CardTitle>Billing</CardTitle></CardHeader><CardContent><p>View your bills and payment history.</p></CardContent></Card>;
+        return <Payment />
       case 'alerts':
         return <Card><CardHeader><CardTitle>Alerts</CardTitle></CardHeader><CardContent><p>Active alerts and notifications.</p></CardContent></Card>;
       case 'profile':
@@ -95,9 +96,8 @@ const WaterCareDashboard = () => {
       )}
 
       <nav
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-100 p-4 flex flex-col transition-transform duration-300 ease-in-out transform ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-100 p-4 flex flex-col transition-transform duration-300 ease-in-out transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}
       >
         <div className="mb-6 font-bold text-lg sm:text-xl md:text-xl flex justify-between items-center">
           <span className="truncate">WaterCare</span>
@@ -114,11 +114,10 @@ const WaterCareDashboard = () => {
             <li key={id}>
               <button
                 onClick={() => handleNavClick(id)}
-                className={`w-full flex items-center px-3 py-2 rounded-md text-sm md:text-base transition-colors ${
-                  view === id
+                className={`w-full flex items-center px-3 py-2 rounded-md text-sm md:text-base transition-colors ${view === id
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-700 hover:bg-blue-100'
-                }`}
+                  }`}
               >
                 <Icon className="mr-3 flex-shrink-0" size={18} />
                 <span className="truncate">{label}</span>

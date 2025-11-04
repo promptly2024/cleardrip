@@ -87,7 +87,7 @@ export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyRepl
 
 export const GetServiceByIdHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
-    const userId = req.user?.userId;
+    const userId = req.user?.userId
     const isAdminUser = isAdmin(req.user?.role);
     if (!id) {
         return sendError(reply, 400, "Service ID is required", "Invalid request");
