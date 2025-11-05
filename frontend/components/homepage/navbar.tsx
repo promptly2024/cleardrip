@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Grid3X3, LogOut, Search, ShoppingCart, User, Menu, X } from 'lucide-react'
+import { LogOut, Search, ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import Link from 'next/link';
 import {
@@ -32,6 +32,100 @@ const NavLink: React.FC<NavLinkProps> = ({ href, children, className = "", onCli
     </Link>
 );
 
+const CartButton: React.FC<{
+    onClick: () => void;
+    count: number;
+    size?: 'md' | 'sm';
+}> = ({ onClick, count, size = 'md' }) => {
+    const isMd = size === 'md';
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            className="p-2 relative"
+            onClick={onClick}
+            aria-label={`Shopping cart${count > 0 ? `, ${count} item${count > 1 ? 's' : ''}` : ''}`}
+        >
+            <ShoppingCart className="w-5 h-5 text-gray-600" />
+            {count > 0 && (
+                <span
+                    className={`absolute -top-1 -right-1 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium 
+                        ${isMd ? 'w-5 h-5 text-xs' : 'w-4 h-4 text-[10px]'}`}
+                >
+                    {count > (isMd ? 99 : 9) ? (isMd ? '99+' : '9+') : count}
+                </span>
+            )}
+            <span className="sr-only" aria-live="polite">{count} items in cart</span>
+        </Button>
+    );
+};
+
+const AccountMenu: React.FC<{
+    variant: 'desktop' | 'mobile';
+    displayName: string;
+    user: any;
+    userInitial: string;
+    dashboardHref: string;
+    onLogout: () => void;
+}> = ({ variant, displayName, user, userInitial, dashboardHref, onLogout }) => (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button
+                variant="ghost"
+                className={variant === 'desktop'
+                    ? "flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2"
+                    : "p-2"}
+            >
+                {variant === 'desktop' && (
+                    <span className="text-sm text-gray-700 font-medium hidden sm:inline">
+                        Hello {displayName}
+                    </span>
+                )}
+                {user?.avatar ? (
+                    <img
+                        src={user.avatar}
+                        alt={`${displayName}'s avatar`}
+                        loading="lazy"
+                        className={variant === 'desktop'
+                            ? "w-8 h-8 rounded-full object-cover"
+                            : "w-6 h-6 rounded-full object-cover"}
+                    />
+                ) : (
+                    <div
+                        className={variant === 'desktop'
+                            ? "w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold"
+                            : "w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-semibold"}
+                        aria-hidden
+                    >
+                        {userInitial}
+                    </div>
+                )}
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-white">
+            <div className="px-3 py-2 text-sm text-gray-800">
+                <div className="font-semibold">{displayName}</div>
+                <div className="text-xs text-gray-500 truncate">{user?.email}</div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+                <Link href={dashboardHref} className="flex items-center gap-2 w-full">
+                    <User className="w-4 h-4" />
+                    Dashboard
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                onClick={onLogout}
+                className="text-red-600 focus:text-red-600"
+            >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
+);
+
 const Navbar: React.FC = () => {
     const { authenticated, user, role, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,7 +135,11 @@ const Navbar: React.FC = () => {
     const { cartCount } = useCart();
 
     const handleSearchQuery = () => {
-        router.push(`/search?query=${searchQuery}`);
+        const q = searchQuery.trim();
+        if (!q) return;
+        router.push(`/search?query=${encodeURIComponent(q)}`);
+        setIsSearchOpen(false);
+        setIsMobileMenuOpen(false);
     };
 
     const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,14 +147,28 @@ const Navbar: React.FC = () => {
     };
 
     useEffect(() => {
-        router.prefetch(`/search?query=${searchQuery}`);
-    }, [searchQuery]);
+        const q = searchQuery.trim();
+        if (!q) return;
+        const t = setTimeout(() => {
+            router.prefetch(`/search?query=${encodeURIComponent(q)}`);
+        }, 300);
+        return () => clearTimeout(t);
+    }, [searchQuery, router]);
 
     useEffect(() => {
         router.prefetch(`/products`);
         router.prefetch(`/services`);
-        router.prefetch(`/subscription`);
-    }, []);
+        router.prefetch(`/subscriptions`);
+    }, [router]);
+
+    useEffect(() => {
+        if (!isSearchOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setIsSearchOpen(false);
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [isSearchOpen]);
 
     const handleLogout = async () => {
         try {
@@ -95,25 +207,34 @@ const Navbar: React.FC = () => {
             : "/user/dashboard";
     };
 
+    const displayName = getUserDisplayName();
+    const userInitial = getUserInitial();
+    const dashboardHref = getDashboardRoute();
+
     return (
         <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    {/* Logo Section */}
-                    <div className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none"
-                        onClick={() => router.push("/")}
-                    >
-                        <img
-                            src="/cleardrip-logo.png"
-                            alt="Clear Drip Logo"
-                            className="w-8 h-8"
-                        />
-                        <span className="font-bold text-lg sm:text-xl text-gray-900 cursor-pointer select-none">
-                            CLEARDRIP
-                        </span>
+                    <div className="flex items-center gap-2 flex-shrink-0 select-none">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                            aria-label="Go to homepage"
+                        >
+                            <img
+                                src="/cleardrip-logo.png"
+                                alt="Clear Drip Logo"
+                                className="w-8 h-8"
+                                loading="eager"
+                                width={32}
+                                height={32}
+                            />
+                            <span className="font-bold text-lg sm:text-xl text-gray-900 select-none">
+                                CLEARDRIP
+                            </span>
+                        </Link>
                     </div>
 
-                    {/* Desktop Navigation Links */}
                     <div className="hidden lg:flex items-center gap-8">
                         <NavLink href="/">Home</NavLink>
                         <NavLink href="/products">Products</NavLink>
@@ -121,176 +242,76 @@ const Navbar: React.FC = () => {
                         <NavLink href="/subscriptions">Subscriptions</NavLink>
                     </div>
 
-                    {/* Desktop Right Section */}
                     <div className="hidden md:flex items-center gap-4">
-                        {/* Search Bar */}
-                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 min-w-[200px]">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSearchQuery();
+                            }}
+                            className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 min-w-[200px]"
+                            role="search"
+                            aria-label="Site search"
+                        >
+                            <label htmlFor="navbar-search" className="sr-only">Search</label>
                             <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
                             <input
+                                id="navbar-search"
                                 type="text"
-                                placeholder="Search for services..."
+                                placeholder="Search…"
                                 className="bg-transparent border-none outline-none text-sm w-full"
-                                aria-label="Search for services"
+                                aria-label="Search"
+                                autoComplete="off"
                                 value={searchQuery}
                                 onChange={handleSearchQueryChange}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        handleSearchQuery();
-                                    }
-                                }}
                             />
-                        </div>
+                        </form>
 
                         {authenticated && role === "USER" && (
                             <>
-                                < Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="p-2 relative"
-                                    onClick={() => router.push('/cart')}
-                                    aria-label="Shopping cart"
-                                >
-                                    <ShoppingCart className="w-5 h-5 text-gray-600" />
-                                    {cartCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                            {cartCount > 99 ? '99+' : cartCount}
-                                        </span>
-                                    )}
-                                </Button>
-
-                                {/* <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="p-2"
-                                    aria-label="Grid menu"
-                                >
-                                    <Grid3X3 className="w-5 h-5 text-gray-600" />
-                                </Button> */}
+                                <CartButton onClick={() => router.push('/cart')} count={cartCount} size="md" />
                             </>
                         )}
-                        {/* Authentication Section */}
                         {authenticated ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2"
-                                    >
-                                        <span className="text-sm text-gray-700 font-medium hidden sm:inline">
-                                            Hello {getUserDisplayName()}
-                                        </span>
-
-                                        {user?.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt={`${user.name}'s avatar`}
-                                                className="w-8 h-8 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold">
-                                                {getUserInitial()}
-                                            </div>
-                                        )}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-white">
-                                    <div className="px-3 py-2 text-sm text-gray-800">
-                                        <div className="font-semibold">{getUserDisplayName()}</div>
-                                        <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-                                    </div>
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href={getDashboardRoute()}
-                                            className="flex items-center gap-2 w-full"
-                                        >
-                                            <User className="w-4 h-4" />
-                                            Dashboard
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem
-                                        onClick={handleLogout}
-                                        className="text-red-600 focus:text-red-600"
-                                    >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Sign Out
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <AccountMenu
+                                variant="desktop"
+                                displayName={displayName}
+                                user={user}
+                                userInitial={userInitial}
+                                dashboardHref={dashboardHref}
+                                onLogout={handleLogout}
+                            />
                         ) : (
                             <Link
                                 href="/user/signup"
                                 className="px-4 py-2 border border-gray-900 rounded-2xl hover:bg-gray-900 hover:text-white transition-colors duration-200 text-gray-900 font-medium"
                             >
-                                    Sign Up
-                                    {/* Get Started */}
+                                Sign Up
                             </Link>
                         )}
                     </div>
 
-                    {/* Mobile Right Section */}
                     <div className="flex md:hidden items-center gap-2">
-                        {/* Mobile Search Toggle */}
                         <Button
                             variant="ghost"
                             size="sm"
                             className="p-2"
                             onClick={toggleSearch}
                             aria-label="Toggle search"
+                            aria-expanded={isSearchOpen}
+                            aria-controls="mobile-search"
                         >
                             <Search className="w-5 h-5 text-gray-600" />
                         </Button>
 
-                        {/* Mobile User Menu or Sign Up */}
                         {authenticated ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="p-2">
-                                        {user?.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt={`${user.name}'s avatar`}
-                                                className="w-6 h-6 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-semibold">
-                                                {getUserInitial()}
-                                            </div>
-                                        )}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <div className="px-3 py-2 text-sm text-gray-800">
-                                        <div className="font-semibold">{getUserDisplayName()}</div>
-                                        <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-                                    </div>
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href={getDashboardRoute()}
-                                            className="flex items-center gap-2 w-full"
-                                        >
-                                            <User className="w-4 h-4" />
-                                            Dashboard
-                                        </Link>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem
-                                        onClick={handleLogout}
-                                        className="text-red-600 focus:text-red-600"
-                                    >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Sign Out
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <AccountMenu
+                                variant="mobile"
+                                displayName={displayName}
+                                user={user}
+                                userInitial={userInitial}
+                                dashboardHref={dashboardHref}
+                                onLogout={handleLogout}
+                            />
                         ) : (
                             <Link
                                 href="/user/signup"
@@ -300,13 +321,14 @@ const Navbar: React.FC = () => {
                             </Link>
                         )}
 
-                        {/* Mobile Menu Button */}
                         <Button
                             variant="ghost"
                             size="sm"
                             className="p-2 lg:hidden"
                             onClick={toggleMobileMenu}
                             aria-label="Toggle mobile menu"
+                            aria-expanded={isMobileMenuOpen}
+                            aria-controls="mobile-nav"
                         >
                             {isMobileMenuOpen ? (
                                 <X className="w-6 h-6 text-gray-600" />
@@ -317,32 +339,36 @@ const Navbar: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Mobile Search Bar */}
                 {isSearchOpen && (
-                    <div className="md:hidden py-3 border-t border-gray-200">
-                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                    <div id="mobile-search" className="md:hidden py-3 border-t border-gray-200">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSearchQuery();
+                            }}
+                            className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2"
+                            role="search"
+                            aria-label="Site search"
+                        >
+                            <label htmlFor="mobile-navbar-search" className="sr-only">Search</label>
                             <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
                             <input
+                                id="mobile-navbar-search"
                                 type="text"
-                                placeholder="Search for services..."
+                                placeholder="Search…"
                                 className="bg-transparent border-none outline-none text-sm w-full"
-                                aria-label="Search for services"
+                                aria-label="Search"
                                 autoFocus
+                                autoComplete="off"
                                 value={searchQuery}
                                 onChange={handleSearchQueryChange}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        handleSearchQuery();
-                                    }
-                                }}
                             />
-                        </div>
+                        </form>
                     </div>
                 )}
 
-                {/* Mobile Navigation Menu */}
                 {isMobileMenuOpen && (
-                    <div className="lg:hidden border-t border-gray-200 bg-white">
+                    <div id="mobile-nav" className="lg:hidden border-t border-gray-200 bg-white">
                         <div className="px-2 pt-2 pb-3 space-y-1">
                             <NavLink
                                 href="/"
@@ -375,20 +401,7 @@ const Navbar: React.FC = () => {
 
                             <div className="border-t border-gray-200 pt-2 mt-2">
                                 <div className="flex items-center gap-4 px-3 py-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="p-2 relative"
-                                        onClick={() => router.push('/cart')}
-                                        aria-label="Shopping cart"
-                                    >
-                                        <ShoppingCart className="w-5 h-5 text-gray-600" />
-                                        {cartCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium text-[10px]">
-                                                {cartCount > 9 ? '9+' : cartCount}
-                                            </span>
-                                        )}
-                                    </Button>
+                                    <CartButton onClick={() => router.push('/cart')} count={cartCount} size="sm" />
                                 </div>
                             </div>
                         </div>
