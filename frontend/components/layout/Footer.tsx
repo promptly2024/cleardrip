@@ -6,11 +6,11 @@ export default function Footer() {
     <div className="container mx-auto px-4">
       <div className="grid md:grid-cols-4 gap-8">
         <div>
-            <img src="/cleardrip-logo.png" alt="cleardriplogo"
-              className="cursor-pointer mb-6"
-              height={70}
-              width={70}
-            />
+          <img src="/cleardrip-logo.png" alt="cleardriplogo"
+            className="cursor-pointer mb-6"
+            height={70}
+            width={70}
+          />
           <p className="text-gray-400 mb-6">
             Your trusted partner for smart water health monitoring and RO services.
           </p>
@@ -72,7 +72,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-800 mt-12 pt-8 text-center">
-        <p className="text-gray-400">© 2025 Watercare. All rights reserved.</p>
+        <p className="text-gray-400">© 2025 ClearDrip. All rights reserved.</p>
       </div>
     </div >
   </footer >

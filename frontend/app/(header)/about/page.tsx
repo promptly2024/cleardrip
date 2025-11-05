@@ -33,7 +33,7 @@ export default function About() {
             <div className="container mx-auto px-4">
                 <div className="text-center mb-16">
                     <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                        Why Choose Watercare?
+                        Why Choose ClearDrip?
                     </h2>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                         Experience the future of water health monitoring with our comprehensive platform designed to keep your family safe and your water pure.

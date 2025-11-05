@@ -130,7 +130,7 @@ export default function ServiceBookingPage() {
 
   useEffect(() => {
     if (serviceBooked) {
-      router.push('/user/dashboard?tabs=services')
+      router.push('/user/dashboard?tab=services')
     }
   }, [serviceBooked]);
 
@@ -246,11 +246,11 @@ export default function ServiceBookingPage() {
         'Service' as any,
         () => {
           toast.success("Payment successful! Your service booking is confirmed.");
-          router.push('/user/dashboard?tabs=services');
+          router.push('/user/dashboard?tab=services');
         },
         () => { },
         (err: any) => {
-          toast.error("Payment failed or was cancelled. Please try booking again.");
+          // toast.error(`Payment failed: ${err.error.description || 'Unknown error occurred'}`);
         }
       );
       await initiatePayment(options);
@@ -261,7 +261,7 @@ export default function ServiceBookingPage() {
         action: {
           label: "View Booking",
           onClick: () => {
-            router.push(`/user/dashboard?tabs=services`);
+            router.push(`/user/dashboard?tab=services`);
           }
         }
       });

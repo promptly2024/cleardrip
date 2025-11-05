@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BarChart3, Droplet, FileText, Bell, User, Settings, LogOut, Menu, X
 } from 'lucide-react';
@@ -26,12 +26,23 @@ const NAV_ITEMS = [
 
 type ViewType = typeof NAV_ITEMS[number]['id'];
 
-const WaterCareDashboard = () => {
+const ClearDripDashboard = () => {
   const { authenticated, isUser, user, logout, authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [view, setView] = useState<ViewType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Initialize view from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as ViewType | null;
+    const validTabs = NAV_ITEMS.map(item => item.id);
+
+    if (tabParam && validTabs.includes(tabParam)) {
+      setView(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && (!authenticated || !isUser)) {
@@ -52,6 +63,8 @@ const WaterCareDashboard = () => {
 
   const handleNavClick = (id: ViewType) => {
     setView(id);
+    // Update URL with new tab
+    router.push(`/user/dashboard?tab=${id}`, { scroll: false });
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
@@ -100,7 +113,7 @@ const WaterCareDashboard = () => {
           }`}
       >
         <div className="mb-6 font-bold text-lg sm:text-xl md:text-xl flex justify-between items-center">
-          <span className="truncate">WaterCare</span>
+          <span className="truncate">ClearDrip</span>
           <button
             className="md:hidden text-gray-700 hover:text-gray-900"
             onClick={() => setSidebarOpen(false)}
@@ -115,8 +128,8 @@ const WaterCareDashboard = () => {
               <button
                 onClick={() => handleNavClick(id)}
                 className={`w-full flex items-center px-3 py-2 rounded-md text-sm md:text-base transition-colors ${view === id
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 hover:bg-blue-100'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-700 hover:bg-blue-100'
                   }`}
               >
                 <Icon className="mr-3 flex-shrink-0" size={18} />
@@ -155,4 +168,4 @@ const WaterCareDashboard = () => {
   );
 };
 
-export default WaterCareDashboard;
+export default ClearDripDashboard;

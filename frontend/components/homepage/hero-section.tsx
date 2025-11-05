@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { X, AlertCircle, Droplets, Shield, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
+import Link from "next/link";
 
 interface AlertBannerProps {
     onClose: () => void;
@@ -25,20 +25,22 @@ const AlertBanner: React.FC<AlertBannerProps> = ({ onClose }) => {
                     <div className="text-sm sm:text-base text-gray-800 min-w-0">
                         <span className="font-medium">High TDS levels detected.</span>
                         <span className="hidden sm:inline ml-1">
-                            <a
+                            <Link
                                 href="/services"
+                                prefetch={true}
                                 className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors duration-200 hover:cursor-pointer"
                             >
                                 Service recommended - Get instant help
-                            </a>
+                            </Link>
                         </span>
                         <span className="sm:hidden ml-1">
-                            <a
+                            <Link
                                 href="/services"
+                                prefetch={true}
                                 className="text-blue-600 hover:text-blue-800 underline font-medium hover:cursor-pointer"
                             >
                                 Get help
-                            </a>
+                            </Link>
                         </span>
                     </div>
                 </div>
@@ -88,9 +90,10 @@ export default function HeroSection() {
 
     const handleBookService = () => {
         router.push("/services");
-        toast.success("Redirecting to book a service...", {
-            description: "Please wait while we take you to the booking page."
-        });
+    };
+
+    const handlePrefetch = () => {
+        router.prefetch("/services");
     };
 
     const heroImages = [
@@ -168,6 +171,8 @@ export default function HeroSection() {
                             <Button
                                 size="lg"
                                 onClick={handleBookService}
+                                onMouseEnter={handlePrefetch}
+                                onFocus={handlePrefetch}
                                 className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-xl px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                             >
                                 Book a Service

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ServiceDefinitionInput, ServiceInput, SlotInput } from "@/schemas/services.schema";
 
-export const bookService = async (data: ServiceInput, userId: string) => {
+export const bookService = async (data: ServiceInput, userId: string, razorpayOrder: any, amount: number) => {
     // check if slot is already booked
     const existingBooking = await prisma.serviceBooking.findFirst({
         where: {
@@ -17,6 +17,19 @@ export const bookService = async (data: ServiceInput, userId: string) => {
             userId,
         },
     });
+    // create payment order
+    await prisma.paymentOrder.create({
+        data: {
+            razorpayOrderId: razorpayOrder.id,
+            amount: amount,
+            status: "PENDING",
+            userId,
+            purpose: "SERVICE_BOOKING",
+            bookingId: service.id,
+            subscriptionId: null,
+            items: undefined
+        }
+    })
     return service;
 };
 
@@ -100,8 +113,7 @@ export const deleteService = async (id: string, userId?: string) => {
 };
 
 export const getAllServices = async (take: number, skip: number, userId?: string) => {
-    // If userId is provided, filter services by user
-    console.log(`Take: ${take}, Skip: ${skip}`);
+    // If userId is provided, filter services by userId
     const services = await prisma.serviceBooking.findMany({
         where: userId ? { userId } : {},
         take,
@@ -115,6 +127,7 @@ export const getAllServices = async (take: number, skip: number, userId?: string
             createdAt: "desc",
         },
     });
+    console.log('Fetched services:', services.length);
     return services;
 };
 
@@ -313,8 +326,8 @@ export const rescheduleService = async (bookingId: string, newSlotId: string, us
 
         return updatedBooking;
     }, {
-        timeout: 15000, 
-        maxWait: 10000 
+        timeout: 15000,
+        maxWait: 10000
     });
 };
 
@@ -375,7 +388,7 @@ export const cancelService = async (bookingId: string, userId: string, reason?: 
 
         return cancelledBooking;
     }, {
-        timeout: 15000, 
-        maxWait: 10000 
+        timeout: 15000,
+        maxWait: 10000
     });
 };

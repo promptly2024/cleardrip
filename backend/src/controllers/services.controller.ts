@@ -71,7 +71,7 @@ export const BookServiceHandler = async (req: FastifyRequest, reply: FastifyRepl
             return sendError(reply, 400, "Service price is invalid", "Cannot book free or negative priced service");
         }
         const razorpayOrder = await createRazorpayOrder(priceNumber);
-        const bookedService = await bookService(serviceData, userId);
+        const bookedService = await bookService(serviceData, userId, razorpayOrder, priceNumber);
 
         return reply.code(201).send({
             message: "Service booked successfully",

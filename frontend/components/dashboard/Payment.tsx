@@ -1,10 +1,31 @@
 "use client";
 import { APIURL } from '@/utils/env';
 import React from 'react'
+import { toast } from 'sonner';
 
 type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED" | "REFUNDED" | "CANCELLED";
 type PaymentPurpose = "SERVICE_BOOKING" | "SUBSCRIPTION" | "PRODUCT_PURCHASE" | "OTHER";
 
+interface Service {
+    id: string;
+    name: string;
+    description: string;
+    type: string;
+    image?: string | null;
+    price: string;
+    duration: number;
+    isActive: boolean;
+    adminId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+interface Slot {
+    id: string;
+    startTime: string;
+    endTime: string;
+    createdAt: string;
+    updatedAt: string;
+}
 interface Product {
     id: string;
     name?: string;
@@ -28,7 +49,16 @@ interface Plan {
 
 interface Booking {
     id: string;
-    [key: string]: any;
+    userId: string;
+    serviceId: string;
+    slotId: string;
+    status: string;
+    beforeImageUrl: string | null,
+    afterImageUrl: string | null,
+    createdAt: "2025-11-05T15:48:25.430Z",
+    updatedAt: "2025-11-05T15:48:51.537Z",
+    service: Service,
+    slot: Slot
 }
 
 interface Transaction {
@@ -123,8 +153,9 @@ const Payment = () => {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.error || errorData.message || 'Network response was not ok');
                 }
-                const data = await response.json().catch(() => null);
 
+                const data = await response.json().catch(() => null);
+                toast.info(JSON.stringify(data));
                 let payments: Payment[] = [];
                 let totalCount: number | null = null;
 
@@ -195,18 +226,39 @@ const Payment = () => {
 
     const SkeletonCard = () => (
         <div className="animate-pulse border border-gray-200 p-3 rounded-lg bg-white flex flex-col gap-2">
-            <div className="flex justify-between items-start gap-3">
-                <div className="space-y-2 w-2/3">
-                    <div className="h-4 bg-slate-200 rounded w-1/2" />
-                    <div className="h-3 bg-slate-200 rounded w-1/3" />
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-slate-200 rounded w-3/4" />
+                    <div className="h-3 bg-slate-200 rounded w-1/2" />
                 </div>
-                <div className="w-1/3 text-right space-y-2">
-                    <div className="h-6 bg-slate-200 rounded w-full inline-block" />
-                    <div className="h-3 bg-slate-200 rounded w-2/3 inline-block mt-2" />
+                <div className="text-right space-y-2">
+                    <div className="h-6 bg-slate-200 rounded w-24" />
+                    <div className="flex gap-2 justify-end">
+                        <div className="h-6 bg-slate-200 rounded-full w-16" />
+                        <div className="h-6 bg-slate-200 rounded w-20" />
+                    </div>
                 </div>
             </div>
-            <div className="h-3 bg-slate-200 rounded w-full" />
-            <div className="h-10 bg-slate-200 rounded w-full" />
+            <div className="h-px bg-gray-200 my-2" />
+            <div className="flex gap-6 flex-wrap">
+                <div className="space-y-1">
+                    <div className="h-3 bg-slate-200 rounded w-16" />
+                    <div className="h-4 bg-slate-200 rounded w-24" />
+                </div>
+                <div className="space-y-1">
+                    <div className="h-3 bg-slate-200 rounded w-12" />
+                    <div className="h-4 bg-slate-200 rounded w-8" />
+                </div>
+                <div className="space-y-1">
+                    <div className="h-3 bg-slate-200 rounded w-20" />
+                    <div className="h-4 bg-slate-200 rounded w-32" />
+                </div>
+            </div>
+            <div className="h-px bg-gray-200 my-2" />
+            <div className="flex justify-between items-center">
+                <div className="h-3 bg-slate-200 rounded w-48" />
+                <div className="h-8 bg-slate-200 rounded w-28" />
+            </div>
         </div>
     );
 
@@ -261,9 +313,9 @@ const Payment = () => {
             ) : (!paymentData || paymentData.length === 0) ? (
                 <p>No payments found.</p>
             ) : (
-                <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <ul className="space-y-3">
                     {paymentData.map((p, pIdx) => (
-                        <div key={p.id ?? `payment-${pIdx}`} className="border border-gray-200 p-3 rounded-lg bg-white flex flex-col">
+                        <li key={p.id ?? `payment-${pIdx}`} className="border border-gray-200 p-3 rounded-lg bg-white flex flex-col">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-semibold truncate">
@@ -273,7 +325,6 @@ const Payment = () => {
                                         {p.userId ? `User: ${p.userId}` : ''}
                                     </div>
                                 </div>
-
                                 <div className="text-right mt-3 sm:mt-0">
                                     <div className="text-lg font-extrabold">
                                         {formatCurrency(p.amount ?? undefined, p.currency ?? 'INR')}
@@ -286,9 +337,7 @@ const Payment = () => {
                                     </div>
                                 </div>
                             </div>
-
                             <hr className="my-2" />
-
                             <div className="flex gap-6 flex-wrap items-center text-sm">
                                 <div className="min-w-[90px]">
                                     <div className="text-xs text-gray-600">Created</div>
@@ -303,7 +352,6 @@ const Payment = () => {
                                     <div>{p.subscription ? `${p.subscription.plan?.name ?? p.subscription.planId ?? 'plan'} (${p.subscription.status ?? '—'})` : '—'}</div>
                                 </div>
                             </div>
-
                             <hr className="my-2" />
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                 <div className="text-sm text-gray-600 break-words">ID: {p.id}</div>
@@ -316,7 +364,6 @@ const Payment = () => {
                                     </button>
                                 </div>
                             </div>
-
                             {expanded[p.id ?? `payment-${pIdx}`] && (
                                 <div className="mt-3 space-y-3">
                                     <div>
@@ -386,25 +433,110 @@ const Payment = () => {
 
                                     {p.booking && (
                                         <div>
-                                            <div className="text-sm font-semibold mb-2">Booking</div>
-                                            <div className="border border-gray-100 p-2 rounded-md">
-                                                {Object.keys(p.booking).length > 0 ? (
-                                                    <div className="grid gap-1">
-                                                        {Object.entries(p.booking).map(([k, v], bi) => (
-                                                            <div key={`${p.id ?? `payment-${pIdx}`}-booking-${k}-${bi}`} className="text-sm">
-                                                                <strong className="text-gray-700">{k}:</strong> <span className="text-gray-500">{String(v)}</span>
+                                            <div className="text-sm font-semibold mb-2">Booking Details</div>
+                                            <div className="border border-gray-100 p-3 rounded-md space-y-3">
+                                                {p.booking.service && (
+                                                    <div className="flex gap-3 pb-3 border-b border-gray-100">
+                                                        {p.booking.service.image ? (
+                                                            <div className="w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-slate-50">
+                                                                <img
+                                                                    src={p.booking.service.image}
+                                                                    alt={p.booking.service.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
                                                             </div>
-                                                        ))}
+                                                        ) : (
+                                                            <div className="w-20 h-20 flex-shrink-0 rounded-md bg-slate-100 flex items-center justify-center">
+                                                                <div className="text-xs text-gray-400">No image</div>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-base">{p.booking.service.name}</div>
+                                                            <div className="text-sm text-gray-600 mt-1">{p.booking.service.description}</div>
+                                                            <div className="flex gap-3 mt-2 text-sm">
+                                                                <div>
+                                                                    <span className="text-gray-500">Type:</span> <strong>{p.booking.service.type}</strong>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-gray-500">Duration:</span> <strong>{p.booking.service.duration}min</strong>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-gray-500">Price:</span> <strong>{formatCurrency(p.booking.service.price, p.currency ?? 'INR')}</strong>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                ) : <div className="text-gray-500">No booking details</div>}
+                                                )}
+
+                                                <div className="grid sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <div className="text-xs text-gray-600 mb-1">Booking ID</div>
+                                                        <div className="text-sm font-mono bg-gray-50 px-2 py-1 rounded">{p.booking.id}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-gray-600 mb-1">Status</div>
+                                                        <div className={`${statusBgClass(p.booking.status)} text-white text-sm font-semibold px-2 py-1 rounded inline-block`}>
+                                                            {p.booking.status}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {p.booking.slot && (
+                                                    <div className="bg-blue-50 border border-blue-100 p-3 rounded-md">
+                                                        <div className="text-sm font-semibold text-blue-900 mb-2">Scheduled Time</div>
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2 text-sm">
+                                                                <span className="text-blue-700 font-medium">Start:</span>
+                                                                <span className="text-blue-900">{formatDate(p.booking.slot.startTime)}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-sm">
+                                                                <span className="text-blue-700 font-medium">End:</span>
+                                                                <span className="text-blue-900">{formatDate(p.booking.slot.endTime)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {(p.booking.beforeImageUrl || p.booking.afterImageUrl) && (
+                                                    <div>
+                                                        <div className="text-sm font-semibold mb-2">Service Images</div>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {p.booking.beforeImageUrl && (
+                                                                <div>
+                                                                    <div className="text-xs text-gray-600 mb-1">Before</div>
+                                                                    <img
+                                                                        src={p.booking.beforeImageUrl}
+                                                                        alt="Before service"
+                                                                        className="w-full h-32 object-cover rounded-md border border-gray-200"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {p.booking.afterImageUrl && (
+                                                                <div>
+                                                                    <div className="text-xs text-gray-600 mb-1">After</div>
+                                                                    <img
+                                                                        src={p.booking.afterImageUrl}
+                                                                        alt="After service"
+                                                                        className="w-full h-32 object-cover rounded-md border border-gray-200"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
+                                                    <div>Booked: {formatDate(p.booking.createdAt)}</div>
+                                                    <div>Last updated: {formatDate(p.booking.updatedAt)}</div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
-                        </div>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
 
             <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">

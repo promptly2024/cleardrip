@@ -1,42 +1,439 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceDot, ReferenceLine } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
 import { TdsClass } from "@/lib/httpClient/tds";
 import { SubscriptionClass } from "@/lib/httpClient/subscription";
 import { ServicesClass } from "@/lib/httpClient/services";
 import { TDSLog } from "@/lib/types/tds";
-import { MoreHorizontal, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
-export const OverviewTab = ({ user }: { user?: { name?: string, loyaltyBadge?: string } }) => {
+interface Subscription {
+  id: string;
+  userId: string;
+  planId: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+  plan: {
+    id: string;
+    name: string;
+    description: string;
+    price: string;
+    duration: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+interface Service {
+  id: string;
+  bookingId?: string;
+  scheduledDate: string | null;
+  timeSlot?: string;
+  serviceType?: string;
+  status: string;
+}
+
+interface OverviewTabProps {
+  user?: {
+    name?: string;
+    loyaltyBadge?: string;
+  };
+}
+
+// Constants
+const TDS_SAFE_LIMIT = 550;
+const FILTER_HEALTH_PERCENTAGE = 85;
+const CHART_DAYS = 7;
+
+// Utility functions
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return "Not scheduled";
+  return new Date(dateString).toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+const getDaysUntilService = (scheduledDate: string | null): number | null => {
+  if (!scheduledDate) return null;
+  const today = new Date();
+  const serviceDate = new Date(scheduledDate);
+  const timeDiff = serviceDate.getTime() - today.getTime();
+  const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  return Math.max(0, daysDiff);
+};
+
+const isSubscriptionActive = (subscription: Subscription | null): boolean => {
+  if (!subscription?.endDate) return false;
+  const today = new Date();
+  const endDate = new Date(subscription.endDate);
+  return endDate > today;
+};
+
+const getSubscriptionStatus = (subscription: Subscription | null): string => {
+  if (!subscription) return "No Subscription";
+  return isSubscriptionActive(subscription) ? "Active" : "Expired";
+};
+
+// Sub-components
+const LiveTDSCard: React.FC<{ liveTDS: number | null }> = ({ liveTDS }) => (
+  <Card className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-lg overflow-hidden">
+    <CardContent className="p-4 sm:p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Live TDS</span>
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" aria-label="Live indicator"></div>
+        </div>
+        <div className="text-4xl sm:text-6xl opacity-20" aria-hidden="true">💧</div>
+      </div>
+      <div className="mb-2">
+        <div className="text-3xl sm:text-4xl font-bold mb-1">
+          {liveTDS !== null ? (
+            <span>{liveTDS} <span className="text-lg sm:text-2xl">ppm</span></span>
+          ) : (
+            <span className="text-white/60 text-xl sm:text-2xl">No data</span>
+          )}
+        </div>
+        <div className="text-xs sm:text-sm opacity-80">Safe until {TDS_SAFE_LIMIT}ppm</div>
+      </div>
+      {liveTDS !== null && liveTDS > TDS_SAFE_LIMIT && (
+        <div className="flex items-center gap-2 mt-3 p-2 bg-red-500/20 rounded text-xs">
+          <AlertTriangle className="w-4 h-4" />
+          <span>TDS level exceeds safe limit</span>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const FilterHealthCard: React.FC = () => {
+  const circumference = 2 * Math.PI * 36;
+  const dashOffset = circumference * (1 - FILTER_HEALTH_PERCENTAGE / 100);
+
+  return (
+    <Card className="bg-white border shadow-sm">
+      <CardContent className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">Filter Health</h3>
+        <div className="flex flex-col items-center">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4" role="progressbar" aria-valuenow={FILTER_HEALTH_PERCENTAGE} aria-valuemin={0} aria-valuemax={100}>
+            <svg className="w-full h-full transform -rotate-90">
+              <circle
+                cx="50%"
+                cy="50%"
+                r="36"
+                stroke="#e5e7eb"
+                strokeWidth="6"
+                fill="none"
+              />
+              <circle
+                cx="50%"
+                cy="50%"
+                r="36"
+                stroke="#06b6d4"
+                strokeWidth="6"
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                className="transition-all duration-300"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl sm:text-2xl font-bold text-gray-700">{FILTER_HEALTH_PERCENTAGE}%</span>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600">remaining</p>
+          <p className="text-xs text-gray-500 text-center mt-3">
+            Estimated replacement in 2 months
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const SubscriptionCard: React.FC<{ subscription: Subscription | null; user?: OverviewTabProps['user'] }> = ({
+  subscription,
+  user
+}) => {
+  const status = getSubscriptionStatus(subscription);
+  const statusColor = status === "Active" ? "text-green-600" : status === "Expired" ? "text-red-600" : "text-gray-600";
+
+  return (
+    <Card className="bg-white border shadow-sm">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-base sm:text-lg font-semibold">Subscription Plan</h3>
+          <button
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="More options"
+          >
+            {/* <MoreHorizontal className="w-5 h-5" /> */}
+          </button>
+        </div>
+
+        {subscription ? (
+          <div className="space-y-2.5">
+            <InfoRow label="Plan" value={subscription.plan.name || "N/A"} valueClass="capitalize" />
+            <InfoRow label="Status" value={status} valueClass={`capitalize ${statusColor}`} />
+            {user?.loyaltyBadge && (
+              <InfoRow label="Badge" value={user.loyaltyBadge} valueClass="text-yellow-600" />
+            )}
+            {subscription.startDate && (
+              <InfoRow label="Valid from" value={formatDate(subscription.startDate)} />
+            )}
+            {subscription.endDate && (
+              <InfoRow label="Valid until" value={formatDate(subscription.endDate)} />
+            )}
+            {subscription.id && (
+              <p className="text-xs text-gray-500 mt-3 pt-3 border-t">
+                ID: {subscription.id.slice(0, 8)}...
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 py-4">No active subscription found</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const InfoRow: React.FC<{ label: string; value: string; valueClass?: string }> = ({
+  label,
+  value,
+  valueClass = ""
+}) => (
+  <div>
+    <p className="text-sm text-gray-600">
+      {label}: <span className={`font-medium ${valueClass}`}>{value}</span>
+    </p>
+  </div>
+);
+
+const WaterAnalyticsCard: React.FC<{ chartData: any[]; alertDay: string | undefined }> = ({
+  chartData,
+  alertDay
+}) => (
+  <Card className="bg-white border shadow-sm">
+    <CardContent className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <h3 className="text-base sm:text-lg font-semibold">Water Usage Analytics</h3>
+        <select
+          className="text-sm border rounded px-3 py-1.5 text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Select time period"
+        >
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+        </select>
+      </div>
+
+      {chartData.length > 0 ? (
+        <>
+          <div className="h-48 sm:h-64 mb-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                />
+                <YAxis
+                  domain={[0, 800]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  width={40}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="InputTDS"
+                  stroke="#374151"
+                  strokeWidth={2}
+                  dot={{ fill: '#374151', strokeWidth: 2, r: 3 }}
+                  name="Input TDS"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="PurifiedTDS"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+                  name="Purified TDS"
+                />
+                {alertDay && (
+                  <ReferenceDot
+                    x={alertDay}
+                    y={chartData.find(d => d.day === alertDay)?.InputTDS}
+                    r={6}
+                    fill="#ef4444"
+                    stroke="#dc2626"
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <LegendItem color="bg-gray-700" label="Input TDS" />
+            <LegendItem color="bg-blue-500" label="Purified TDS" />
+          </div>
+
+          {alertDay && (
+            <div className="flex items-start gap-2 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <span className="text-xs sm:text-sm text-red-700">
+                <strong>Alert:</strong> Input TDS levels exceeded {TDS_SAFE_LIMIT} ppm on {alertDay}
+              </span>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="h-48 sm:h-64 flex items-center justify-center text-gray-500">
+          No TDS data available
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const LegendItem: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+  <div className="flex items-center gap-2">
+    <div className={`w-3 h-3 ${color} rounded-full`}></div>
+    <span className="text-xs sm:text-sm text-gray-600">{label}</span>
+  </div>
+);
+
+const NextServiceCard: React.FC<{ nextService: Service | null }> = ({ nextService }) => {
+  const daysUntil = nextService?.scheduledDate ? getDaysUntilService(nextService.scheduledDate) : null;
+
+  const handleReschedule = useCallback(() => {
+    toast.info("Reschedule feature coming soon");
+  }, []);
+
+  const handleAddToCalendar = useCallback(() => {
+    toast.info("Add to calendar feature coming soon");
+  }, []);
+
+  return (
+    <Card className="bg-white border shadow-sm">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-base sm:text-lg font-semibold">Next RO Service</h3>
+          <button
+            className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="View service details"
+          >
+            <ArrowUpRight className="w-4 h-4 text-blue-600" />
+          </button>
+        </div>
+
+        {nextService ? (
+          <div className="space-y-4">
+            {daysUntil !== null && (
+              <p className="text-sm text-gray-600">
+                Due in <span className="font-semibold text-lg text-gray-900">{daysUntil}</span>{" "}
+                <span className="font-semibold">Days</span>
+              </p>
+            )}
+
+            <div className="space-y-2">
+              <InfoRow label="Date" value={formatDate(nextService.scheduledDate)} />
+              {nextService.bookingId && (
+                <InfoRow label="Booking ID" value={nextService.bookingId} />
+              )}
+              {nextService.id && !nextService.bookingId && (
+                <InfoRow label="Service ID" value={nextService.id} />
+              )}
+              <InfoRow label="Time" value={nextService.timeSlot || "Between 10 AM – 1 PM"} />
+              {nextService.serviceType && (
+                <InfoRow label="Type" value={nextService.serviceType} valueClass="capitalize" />
+              )}
+            </div>
+
+            <div className="pt-4 space-y-2">
+              <button
+                onClick={handleReschedule}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Reschedule
+              </button>
+              <button
+                onClick={handleAddToCalendar}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Add to Calendar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 py-4">No upcoming service scheduled</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main component
+export const OverviewTab: React.FC<OverviewTabProps> = ({ user }) => {
   const [tdsLogs, setTdsLogs] = useState<TDSLog[]>([]);
   const [liveTDS, setLiveTDS] = useState<number | null>(null);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [nextService, setNextService] = useState<any>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [nextService, setNextService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
+      setError(null);
       try {
-        // Fetch TDS logs (last 7 is enough for chart and live)
-        const tdsRes = await TdsClass.getRecentTDSLogs(1, 7);
-        setTdsLogs(Array.isArray(tdsRes.tdsLogs) ? tdsRes.tdsLogs : []);
-        if (tdsRes.tdsLogs?.length) {
-          setLiveTDS(tdsRes.tdsLogs[tdsRes.tdsLogs.length - 1]?.tdsValue || null);
+        const [tdsRes, subRes, servicesRes] = await Promise.allSettled([
+          TdsClass.getRecentTDSLogs(1, CHART_DAYS),
+          SubscriptionClass.getCurrentSubscription(),
+          ServicesClass.getAllServices(5, 0)
+        ]);
+        toast.info(JSON.stringify(servicesRes));
+
+        // Handle TDS data
+        if (tdsRes.status === 'fulfilled') {
+          const logs = Array.isArray(tdsRes.value.tdsLogs) ? tdsRes.value.tdsLogs : [];
+          setTdsLogs(logs);
+          if (logs.length) {
+            setLiveTDS(logs[logs.length - 1]?.tdsValue || null);
+          }
         }
 
-        // Fetch subscription
-        const subRes = await SubscriptionClass.getCurrentSubscription();
-        setSubscription(subRes.data);
+        // Handle subscription data
+        if (subRes.status === 'fulfilled') {
+          setSubscription((subRes.value as any).data || null);
+        }
 
-        // Fetch next RO service (find next scheduled/upcoming)
-        const servicesRes = await ServicesClass.getAllServices(5, 0);
-        const upcoming = Array.isArray(servicesRes.services)
-          ? servicesRes.services.find((svc: any) => svc.status === "PENDING" || svc.status === "SCHEDULED")
-          : null;
-        setNextService(upcoming || null);
+        // Handle services data
+        if (servicesRes.status === 'fulfilled') {
+          const services = Array.isArray(servicesRes.value.services) ? servicesRes.value.services : [];
+          // const upcoming = services.find((svc: any) =>
+          //   svc.status === "PENDING" || svc.status === "SCHEDULED"
+          // ) as Service | null; // Ensure upcoming is of type Service or null
+          // setNextService(upcoming || null);
+        }
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again.");
+        toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -44,340 +441,60 @@ export const OverviewTab = ({ user }: { user?: { name?: string, loyaltyBadge?: s
     fetchAll();
   }, []);
 
-  // Format TDS chart data for Recharts
-  const chartData = tdsLogs.map((log: any, idx: number) => ({
-    day: log.day || (log.createdAt ? new Date(log.createdAt).toLocaleDateString('en-US', { weekday: 'short' }) : `Day ${idx+1}`),
-    InputTDS: log.inputTds ?? log.tdsValue ?? 0,
-    PurifiedTDS: log.purifiedTds ?? log.purifiedTds ?? 0,
-  }));
+  const chartData = useMemo(() =>
+    tdsLogs.map((log: any, idx: number) => ({
+      day: log.day || (log.createdAt ? new Date(log.createdAt).toLocaleDateString('en-US', { weekday: 'short' }) : `Day ${idx + 1}`),
+      InputTDS: log.inputTds ?? log.tdsValue ?? 0,
+      PurifiedTDS: log.purifiedTds ?? 0,
+    })),
+    [tdsLogs]
+  );
 
-  // Find alerts for chart
-  const alertDay = chartData.find((log: any) => log.InputTDS > 550)?.day;
-
-  // Calculate days until next service
-  const getDaysUntilService = (scheduledDate: string | null) => {
-    if (!scheduledDate) return null;
-    const today = new Date();
-    const serviceDate = new Date(scheduledDate);
-    const timeDiff = serviceDate.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    return Math.max(0, daysDiff);
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Not scheduled";
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
-
-  // Check if subscription is active
-  const isSubscriptionActive = (subscription: any) => {
-    if (!subscription || !subscription.endDate) return false;
-    const today = new Date();
-    const endDate = new Date(subscription.endDate);
-    return endDate > today;
-  };
-
-  // Get subscription status
-  const getSubscriptionStatus = (subscription: any) => {
-    if (!subscription) return "No Subscription";
-    if (isSubscriptionActive(subscription)) return "Active";
-    return "Expired";
-  };
+  const alertDay = useMemo(() =>
+    chartData.find((log: any) => log.InputTDS > TDS_SAFE_LIMIT)?.day,
+    [chartData]
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading dashboard...</div>
+      <div className="flex items-center justify-center h-64 sm:h-96">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-base sm:text-lg text-gray-600">Loading dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 sm:h-96">
+        <div className="text-center text-red-600">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
+          <p className="text-base sm:text-lg">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
-      {/* Top row - spans 2 columns */}
-      <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Live TDS Card */}
-        <Card className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Live TDS</span>
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              </div>
-              <div className="text-6xl opacity-20">💧</div>
-            </div>
-            <div className="mb-4">
-              <div className="text-4xl font-bold mb-2">
-                {liveTDS !== null ? `${liveTDS} ppm` : <span className="text-white/60">No data</span>}
-              </div>
-              <div className="text-sm opacity-80">Safe until 550ppm</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Filter Health Card */}
-        <Card className="bg-white border shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Filter health</h3>
-            <div className="flex flex-col items-center">
-              <div className="relative w-24 h-24 mb-4">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="36"
-                    stroke="#e5e7eb"
-                    strokeWidth="6"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="36"
-                    stroke="#06b6d4"
-                    strokeWidth="6"
-                    fill="none"
-                    strokeDasharray={226}
-                    strokeDashoffset={226 * (1 - 0.85)}
-                    className="transition-all duration-300"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-700">85%</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">remaining</p>
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Estimated replacement in 2 months
-            </p>
-          </CardContent>
-        </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 p-3 sm:p-4">
+      {/* Top row - 2 cards on large screens */}
+      <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <LiveTDSCard liveTDS={liveTDS} />
+        <FilterHealthCard />
       </div>
 
-      {/* Subscription Info Card - Right side */}
-      <Card className="bg-white border shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-lg font-semibold">Subscription Plan</h3>
-            <MoreHorizontal className="w-5 h-5 text-gray-400" />
-          </div>
-          
-          {subscription ? (
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-600">
-                  Plan: <span className="font-medium capitalize">{subscription.planType || "N/A"}</span>
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">
-                  Status: <span className={`font-medium capitalize ${
-                    getSubscriptionStatus(subscription) === "Active" 
-                      ? "text-green-600" 
-                      : getSubscriptionStatus(subscription) === "Expired"
-                      ? "text-red-600"
-                      : "text-gray-600"
-                  }`}>
-                    {getSubscriptionStatus(subscription)}
-                  </span>
-                </p>
-              </div>
-              {user?.loyaltyBadge && (
-                <div>
-                  <p className="text-sm text-gray-600">
-                    Badge: <span className="font-medium text-yellow-600">{user.loyaltyBadge}</span>
-                  </p>
-                </div>
-              )}
-              {subscription.startDate && (
-                <div>
-                  <p className="text-sm text-gray-600">
-                    Valid from: <span className="font-medium">{formatDate(subscription.startDate)}</span>
-                  </p>
-                </div>
-              )}
-              {subscription.endDate && (
-                <div>
-                  <p className="text-sm text-gray-600">
-                    Valid until: <span className="font-medium">{formatDate(subscription.endDate)}</span>
-                  </p>
-                </div>
-              )}
-              {subscription.id && (
-                <div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    ID: {subscription.id.slice(0, 8)}...
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">No active subscription found</div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Subscription card - Right column on large screens */}
+      <SubscriptionCard subscription={subscription} user={user} />
 
-      {/* Water Usage Analytics - Full width bottom */}
+      {/* Water Analytics - Full width on medium screens, 2 cols on large */}
       <div className="lg:col-span-2">
-        <Card className="bg-white border shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold">Water usage Analytics</h3>
-              <select className="text-sm border rounded px-3 py-1 text-gray-600">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-              </select>
-            </div>
-            
-            {chartData.length > 0 ? (
-              <>
-                <div className="h-64 mb-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis 
-                        dataKey="day" 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                      />
-                      <YAxis 
-                        domain={[0, 800]} 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="InputTDS" 
-                        stroke="#374151" 
-                        strokeWidth={3}
-                        dot={{ fill: '#374151', strokeWidth: 2, r: 4 }}
-                        name="Input TDS" 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="PurifiedTDS" 
-                        stroke="#3b82f6" 
-                        strokeWidth={3}
-                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                        name="Purified TDS" 
-                      />
-                      {/* Highlight alert point */}
-                      {alertDay && (
-                        <ReferenceDot 
-                          x={alertDay} 
-                          y={chartData.find(d => d.day === alertDay)?.InputTDS} 
-                          r={6} 
-                          fill="#ef4444" 
-                          stroke="#dc2626"
-                        />
-                      )}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Legend */}
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gray-700 rounded-full"></div>
-                    <span className="text-sm text-gray-600">Input TDS</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">Purified TDS</span>
-                  </div>
-                </div>
-
-                {/* Alert */}
-                {alertDay && (
-                  <div className="flex items-center gap-2 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-red-500"></div>
-                    <span className="text-sm text-red-700">
-                      <strong>Alert:</strong> Input TDS levels exceeded 550 ppm on {alertDay}
-                    </span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                No TDS data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <WaterAnalyticsCard chartData={chartData} alertDay={alertDay} />
       </div>
 
-      {/* Next RO Service Card */}
-      <Card className="bg-white border shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-lg font-semibold">Next Ro service scheduled</h3>
-            <button className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors">
-              <ArrowUpRight className="w-4 h-4 text-blue-600" />
-            </button>
-          </div>
-          
-          {nextService ? (
-            <div className="space-y-4">
-              {nextService.scheduledDate && (
-                <p className="text-sm text-gray-600">
-                  Due in <span className="font-semibold">
-                    {getDaysUntilService(nextService.scheduledDate)} Days
-                  </span>
-                </p>
-              )}
-              
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-semibold">Date:</span> {formatDate(nextService.scheduledDate)}
-                </p>
-                {nextService.bookingId && (
-                  <p className="text-sm">
-                    <span className="font-semibold">Booking ID:</span> {nextService.bookingId}
-                  </p>
-                )}
-                {nextService.id && !nextService.bookingId && (
-                  <p className="text-sm">
-                    <span className="font-semibold">Service ID:</span> {nextService.id}
-                  </p>
-                )}
-                <p className="text-sm">
-                  <span className="font-semibold">Time:</span> {nextService.timeSlot || "Between 10 AM – 1 PM"}
-                </p>
-                {nextService.serviceType && (
-                  <p className="text-sm">
-                    <span className="font-semibold">Type:</span> {nextService.serviceType}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-4 space-y-2">
-                <button className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  Reschedule
-                </button>
-                <button className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  Add to calendar
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">No upcoming service found</div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Next Service - Right column on large screens */}
+      <NextServiceCard nextService={nextService} />
     </div>
   );
 };
