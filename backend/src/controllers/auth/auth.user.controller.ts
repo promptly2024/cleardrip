@@ -92,9 +92,9 @@ export const forgotPasswordHandler = async (
 ) => {
     try {
         const { email } = forgotPasswordSchema.parse(req.body);
-        
+
         const user = await findUserByEmailOrPhone(email);
-        
+
         // Always return success for security (prevents email enumeration attacks)
         if (!user || !user.email) {
             logger.warn(`Password reset requested for non-existent email: ${email}`);
@@ -103,31 +103,31 @@ export const forgotPasswordHandler = async (
                 success: true,
             });
         }
-        
+
         try {
             // Generate secure reset token
             const { plainToken } = await generatePasswordResetToken(user.id);
-            
+
             // Send reset email
             await sendPasswordResetEmail(user.email, plainToken, user.name);
-            
+
             logger.info(`Password reset email sent to ${user.email} for user ${user.id}`);
         } catch (emailError) {
             logger.error(emailError, `Failed to send password reset email to ${user.email}`);
             // Still return success to prevent enumeration
         }
-        
+
         return reply.code(200).send({
             message: "If an account with that email exists, you will receive a password reset link shortly.",
             success: true,
         });
     } catch (error) {
         logger.error(error, "Forgot password handler error");
-        
+
         if (error instanceof z.ZodError) {
             return sendError(reply, 400, "Invalid email format", error);
         }
-        
+
         return sendError(reply, 500, "Failed to process password reset request", error);
     }
 };
@@ -138,28 +138,28 @@ export const verifyResetTokenHandler = async (
 ) => {
     try {
         const { token } = req.query as { token?: string };
-        
+
         if (!token) {
             return sendError(reply, 400, "Reset token is required");
         }
-        
+
         try {
             verifyResetTokenSchema.parse({ token });
         } catch (error) {
             return sendError(reply, 400, "Invalid token format");
         }
-        
+
         const verification = await verifyPasswordResetToken(token);
-        
+
         if (!verification.valid) {
-            return reply.code(400).send({ 
-                valid: false, 
+            return reply.code(400).send({
+                valid: false,
                 error: verification.error,
                 code: verification.code,
             });
         }
-        
-        return reply.code(200).send({ 
+
+        return reply.code(200).send({
             valid: true,
             message: "Token is valid. You can now reset your password."
         });
@@ -175,13 +175,13 @@ export const resetPasswordHandler = async (
 ) => {
     try {
         const { token, newPassword } = resetPasswordSchema.parse(req.body);
-        
+
         try {
             // Reset password (includes token verification)
             const user = await resetUserPassword(token, newPassword);
-            
+
             logger.info(`Password reset successful for user ${user.id} (${user.email})`);
-            
+
             return reply.code(200).send({
                 success: true,
                 message: "Password reset successful! You can now login with your new password.",
@@ -193,30 +193,30 @@ export const resetPasswordHandler = async (
             });
         } catch (error: any) {
             logger.warn(`Password reset failed: ${error.message}`);
-            
+
             // Return specific error messages
             if (error.message.includes('expired')) {
                 return sendError(reply, 400, 'Reset token has expired. Please request a new password reset.', error);
             }
-            
+
             if (error.message.includes('already been used')) {
                 return sendError(reply, 400, 'This reset link has already been used. Please request a new password reset.', error);
             }
-            
+
             if (error.message.includes('Invalid')) {
                 return sendError(reply, 400, 'Invalid reset token. Please request a new password reset.', error);
             }
-            
+
             throw error;
         }
     } catch (error) {
         logger.error(error, "Reset password handler error");
-        
+
         if (error instanceof ZodError) {
             const errorMessage = error.issues[0]?.message || "Invalid input";
             return sendError(reply, 400, errorMessage, error);
         }
-        
+
         return sendError(reply, 500, "Failed to reset password", error);
     }
 };
@@ -230,6 +230,18 @@ export const updateProfileHandler = async (req: FastifyRequest, reply: FastifyRe
         const body = updateUserSchema.safeParse(req.body)
         if (!body.success) {
             return sendError(reply, 400, "Validation error", body.error.issues)
+        }
+        // email can not be updated
+        if (body.data.email) {
+            // remove email from data to be updated
+            delete body.data.email
+        }
+        // phone should be unique
+        if (body.data.phone) {
+            const existingUser = await findUserByEmailOrPhone(undefined, body.data.phone)
+            if (existingUser && existingUser.id !== user.userId) {
+                return sendError(reply, 400, "Phone number is already in use")
+            }
         }
 
         // Update user profile logic

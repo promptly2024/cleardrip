@@ -406,7 +406,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ user }) => {
           SubscriptionClass.getCurrentSubscription(),
           ServicesClass.getAllServices(5, 0)
         ]);
-        toast.info(JSON.stringify(servicesRes));
 
         // Handle TDS data
         if (tdsRes.status === 'fulfilled') {

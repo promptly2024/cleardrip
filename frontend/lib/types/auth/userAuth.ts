@@ -41,6 +41,7 @@ export interface FormData {
   phone: string;
   address: string;
   password: string;
+  whatsappNumber?: string;
 }
 
 export interface FormErrors {
@@ -49,6 +50,7 @@ export interface FormErrors {
   phone?: string;
   address?: string;
   password?: string;
+  whatsappNumber?: string;
 }
 
 export interface AddressFormData {

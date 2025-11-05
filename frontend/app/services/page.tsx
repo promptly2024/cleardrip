@@ -22,10 +22,12 @@ import {
   ChevronRight,
   Grid3X3,
   List,
-  SlidersHorizontal
+  SlidersHorizontal,
+  X 
 } from "lucide-react"
 import Link from "next/link"
 import Footer from "@/components/layout/Footer"
+import { usePathname, useSearchParams } from "next/navigation" 
 
 interface Service {
   id: string
@@ -34,6 +36,7 @@ interface Service {
   type: string
   image: string
   price: number
+  bookingCount: number
   duration: number
   isActive: boolean
   adminId: string
@@ -56,6 +59,8 @@ export default function ServicesPage() {
   const [showFilters, setShowFilters] = React.useState<boolean>(false)
   const [rating, setRating] = React.useState<number>(4.5)
   const router = useRouter()
+  const pathname = usePathname() 
+  const searchParams = useSearchParams() 
 
   const fetchServices = async () => {
     setLoading(true)
@@ -100,6 +105,27 @@ export default function ServicesPage() {
     fetchServices()
   }, [])
 
+  React.useEffect(() => {
+    const typeFromUrl = (searchParams.get("type") || "").toLowerCase()
+    if (typeFromUrl) {
+      setSelectedType(typeFromUrl)
+    } else {
+      setSelectedType("all")
+    }
+  }, [searchParams]) 
+
+  // Keep URL in sync when selectedType changes
+  const updateQueryParam = React.useCallback((key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value && value !== "all") {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams]) 
+
   // Filter and sort services
   React.useEffect(() => {
     let filtered = [...services]
@@ -115,7 +141,7 @@ export default function ServicesPage() {
 
     // Filter by type
     if (selectedType !== "all") {
-      filtered = filtered.filter(service => service.type === selectedType)
+      filtered = filtered.filter(service => service.type.toLowerCase() === selectedType.toLowerCase())
     }
 
     // Sort services
@@ -207,7 +233,6 @@ export default function ServicesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-green-600">
-                <DollarSign className="h-4 w-4 mr-1" />
                 <span className="font-bold text-lg">₹{service.price}</span>
               </div>
               <div className="flex items-center text-gray-500">
@@ -218,10 +243,10 @@ export default function ServicesPage() {
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            {/* <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Users className="h-4 w-4" />
-              <span>150+ bookings</span>
-            </div>
+              <span>{service.bookingCount}+ bookings</span>
+            </div> */}
 
             <Button
               onClick={(e) => {
@@ -334,6 +359,49 @@ export default function ServicesPage() {
               </div>
             </div>
 
+            {/* Active Filters Chips */}
+            {(selectedType !== "all" || searchQuery.trim()) && ( 
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {selectedType !== "all" && (
+                  <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-sm">
+                    Type: {selectedType}
+                    <button
+                      aria-label="Clear type filter"
+                      onClick={() => {
+                        setSelectedType("all")
+                        updateQueryParam("type", null)
+                      }}
+                      className="p-0.5 hover:text-blue-900"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </span>
+                )}
+                {searchQuery.trim() && (
+                  <span className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1 rounded-full text-sm">
+                    Search: {searchQuery}
+                    <button
+                      aria-label="Clear search"
+                      onClick={() => setSearchQuery("")}
+                      className="p-0.5 hover:text-gray-900"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectedType("all")
+                    setSearchQuery("")
+                    updateQueryParam("type", null)
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-900 underline"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+
             {/* Filter Panel */}
             {showFilters && (
               <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
@@ -345,7 +413,11 @@ export default function ServicesPage() {
                     </label>
                     <select
                       value={selectedType}
-                      onChange={(e) => setSelectedType(e.target.value)}
+                      onChange={(e) => {
+                        const newType = e.target.value
+                        setSelectedType(newType)
+                        updateQueryParam("type", newType === "all" ? null : newType.toLowerCase())
+                      }}
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">All Types</option>

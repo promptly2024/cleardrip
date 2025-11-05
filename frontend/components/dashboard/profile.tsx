@@ -6,12 +6,12 @@ import { X, Edit, User, Mail, Phone, MapPin, Eye, EyeOff } from 'lucide-react';
 import { AuthService } from '@/lib/httpClient/userAuth';
 import { useAuth } from '@/context/AuthContext';
 import { AddressFormData, ExtendedFormData, FormData, FormErrors, SignupData } from '@/lib/types/auth/userAuth';
+import { toast } from 'sonner';
 
 const ProfileComponent: React.FC = () => {
   const { user, refetch } = useAuth();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<ExtendedFormData>({
     name: user?.name || '',
@@ -24,10 +24,11 @@ const ProfileComponent: React.FC = () => {
       postalCode: user?.address?.postalCode || '',
       country: user?.address?.country || '',
     },
-    password: ''
+    password: '',
+    whatsappNumber: user?.whatsappNumber || ''
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // Helper function to format address for display
   const formatAddressForDisplay = (address: any): string => {
@@ -50,8 +51,8 @@ const ProfileComponent: React.FC = () => {
       [field]: value
     }));
 
-    if (errors[field]) {
-      setErrors(prev => ({
+    if (formErrors[field]) {
+      setFormErrors(prev => ({
         ...prev,
         [field]: ''
       }));
@@ -85,7 +86,7 @@ const ProfileComponent: React.FC = () => {
       newErrors.phone = 'Invalid phone number format';
     }
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -108,23 +109,17 @@ const ProfileComponent: React.FC = () => {
         updateData.address = formData.address;
       }
 
-      // Only include password if it's provided
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
-
-      const result = await AuthService.updateProfile(updateData);
+      await AuthService.updateProfile(updateData);
 
       // Refresh auth context to get updated user data
       await refetch();
       setIsEditing(false);
       setFormData(prev => ({ ...prev, password: '' }));
-
-      alert(result.message || 'Profile updated successfully!');
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Update profile error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +130,7 @@ const ProfileComponent: React.FC = () => {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
+      whatsappNumber: user?.whatsappNumber || '',
       address: {
         street: user?.address?.street || '',
         city: user?.address?.city || '',
@@ -145,7 +141,7 @@ const ProfileComponent: React.FC = () => {
       password: ''
     });
     setIsEditing(true);
-    setErrors({});
+    setFormErrors({});
   };
 
   const handleCancelEdit = (): void => {
@@ -163,7 +159,7 @@ const ProfileComponent: React.FC = () => {
       },
       password: ''
     });
-    setErrors({});
+    setFormErrors({});
   };
 
   // Small helper to render initials when no profile image
@@ -232,23 +228,23 @@ const ProfileComponent: React.FC = () => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`mt-1 w-full ${errors.name ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
+                    className={`mt-1 w-full ${formErrors.name ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
                     placeholder="Enter your name"
                   />
-                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                  {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
                 </div>
 
-                <div>
+                <div title='Email cannot be changed'>
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`mt-1 w-full ${errors.email ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
+                    disabled={true}
+                    className={`mt-1 w-full ${formErrors.email ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
                     placeholder="you@example.com"
                   />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                  {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                 </div>
 
                 <div>
@@ -258,33 +254,24 @@ const ProfileComponent: React.FC = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`mt-1 w-full ${errors.phone ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
+                    className={`mt-1 w-full ${formErrors.phone ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
                     placeholder="+91 XXXXXXXXXX"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
                 </div>
 
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
-                  <div className="relative mt-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      className="w-full pr-10 border-gray-200 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Enter new password (optional)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                {/* <div>
+                  <Label htmlFor="whatsappNumber" className="text-sm font-medium text-gray-700">WhatsApp Number</Label>
+                  <Input
+                    id="whatsappNumber"
+                    type="tel"
+                    value={formData.whatsappNumber}
+                    onChange={(e) => handleInputChange('whatsappNumber', e.target.value)}
+                    className={`mt-1 w-full ${formErrors.whatsappNumber ? 'border-red-500' : 'border-gray-200'} focus:ring-2 focus:ring-indigo-200`}
+                    placeholder="+91 XXXXXXXXXX"
+                  />
+                  {formErrors.whatsappNumber && <p className="text-red-500 text-xs mt-1">{formErrors.whatsappNumber}</p>}
+                </div> */}
               </div>
 
               <div className="mt-4">
@@ -385,6 +372,15 @@ const ProfileComponent: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-600">Phone</p>
                   <p className="text-gray-800 font-medium">{user.phone}</p>
+                </div>
+              </div>
+            )}
+            {user?.whatsappNumber && (
+              <div className="p-3 bg-gray-50 rounded-lg flex items-start gap-3">
+                <Phone className="w-5 h-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-600">WhatsApp Number</p>
+                  <p className="text-gray-800 font-medium">{user.whatsappNumber}</p>
                 </div>
               </div>
             )}
