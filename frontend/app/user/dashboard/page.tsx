@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BarChart3, Droplet, FileText, Bell, User, Settings, LogOut, Menu, X
@@ -168,4 +168,13 @@ const ClearDripDashboard = () => {
   );
 };
 
-export default ClearDripDashboard;
+// Wrapper component to handle Suspense
+const DashboardWithSuspense = () => {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <ClearDripDashboard />
+    </Suspense>
+  );
+};
+
+export default DashboardWithSuspense;

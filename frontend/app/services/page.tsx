@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { APIURL } from "@/utils/env"
 import { useRouter } from "next/navigation"
-import React from "react"
+import React, { Suspense } from "react"
 import { toast } from "sonner"
 import {
   Clock,
@@ -23,11 +23,11 @@ import {
   Grid3X3,
   List,
   SlidersHorizontal,
-  X 
+  X
 } from "lucide-react"
 import Link from "next/link"
 import Footer from "@/components/layout/Footer"
-import { usePathname, useSearchParams } from "next/navigation" 
+import { usePathname, useSearchParams } from "next/navigation"
 
 interface Service {
   id: string
@@ -47,7 +47,7 @@ interface Service {
 type ViewMode = 'grid' | 'list'
 type SortBy = 'name' | 'price-low' | 'price-high' | 'duration' | 'newest'
 
-export default function ServicesPage() {
+function ServicesPage() {
   const [services, setServices] = React.useState<Service[]>([])
   const [filteredServices, setFilteredServices] = React.useState<Service[]>([])
   const [loading, setLoading] = React.useState<boolean>(true)
@@ -59,8 +59,8 @@ export default function ServicesPage() {
   const [showFilters, setShowFilters] = React.useState<boolean>(false)
   const [rating, setRating] = React.useState<number>(4.5)
   const router = useRouter()
-  const pathname = usePathname() 
-  const searchParams = useSearchParams() 
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const fetchServices = async () => {
     setLoading(true)
@@ -112,7 +112,7 @@ export default function ServicesPage() {
     } else {
       setSelectedType("all")
     }
-  }, [searchParams]) 
+  }, [searchParams])
 
   // Keep URL in sync when selectedType changes
   const updateQueryParam = React.useCallback((key: string, value: string | null) => {
@@ -124,7 +124,7 @@ export default function ServicesPage() {
     }
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [pathname, router, searchParams]) 
+  }, [pathname, router, searchParams])
 
   // Filter and sort services
   React.useEffect(() => {
@@ -360,7 +360,7 @@ export default function ServicesPage() {
             </div>
 
             {/* Active Filters Chips */}
-            {(selectedType !== "all" || searchQuery.trim()) && ( 
+            {(selectedType !== "all" || searchQuery.trim()) && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {selectedType !== "all" && (
                   <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-sm">
@@ -532,5 +532,40 @@ export default function ServicesPage() {
       </section>
       <Footer />
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function ServicesLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
+              Professional water care services to keep your RO system running at peak performance
+            </p>
+          </div>
+        </div>
+      </section>
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <span className="text-lg text-gray-600">Loading services...</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// with suspense and loading
+export default function Service() {
+  return (
+    <Suspense fallback={<ServicesLoading />}>
+      <ServicesPage />
+    </Suspense>
   )
 }
