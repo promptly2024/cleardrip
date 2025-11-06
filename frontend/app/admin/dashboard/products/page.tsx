@@ -287,7 +287,7 @@ export default function AdminProductsPage() {
           products.map((product) => (
             <div
               key={product.id}
-              title={`${product.name} — ${product.inventory} in stock • $${product.price.toFixed(2)}`}
+              title={`${product.name} — ${product.inventory} in stock • $${Number(product.price).toFixed(2)}`}
               role="group"
               tabIndex={0}
               className="p-6 bg-white border rounded-lg shadow-sm group hover:shadow-lg hover:scale-[1.02] transition-transform flex flex-col focus:outline-none focus:ring-4 focus:ring-blue-50 cursor-pointer"
@@ -304,7 +304,7 @@ export default function AdminProductsPage() {
                   {product.name}
                 </h2>
                 <p className="text-blue-600 font-semibold">
-                  ${product.price.toFixed(2)}
+                  Rs. {Number(product.price).toFixed(2)}
                 </p>
                 <p className="text-gray-600">
                   Inventory: {product.inventory}

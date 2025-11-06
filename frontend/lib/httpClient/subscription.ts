@@ -89,7 +89,7 @@ export class SubscriptionClass {
         credentials: "include",
         body: JSON.stringify(subscriptionData),
       });
-      
+
       const result = await response.json();
       if (!response.ok) {
         toast.error("Failed to create subscription plan", {
@@ -117,15 +117,38 @@ export class SubscriptionClass {
 
       if (!response.ok) {
         toast.error("Failed to delete subscription plan", {
-          description: result.message || "Failed to delete plan",
+          description: result.error || result.message || "Failed to delete plan",
         });
-        throw new Error(result.message || "Failed to delete plan");
+        throw new Error(result.error || result.message || "Failed to delete plan");
       }
 
       toast.success("Subscription plan deleted");
       return result;
     } catch (error) {
       console.error("Error deleting subscription plan:", error);
+      throw error;
+    }
+  }
+
+  // Toggle Subscription Active Status
+  static async toggleSubscriptionStatus(id: string): Promise<SubscriptionResponse> {
+    try {
+      const response = await fetch(`${APIURL}/subscriptions/${id}/toggle`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error("Failed to update subscription status", {
+          description: result.message || "Failed to update status",
+        });
+        throw new Error(result.message || "Failed to update status");
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error toggling subscription status:", error);
       throw error;
     }
   }

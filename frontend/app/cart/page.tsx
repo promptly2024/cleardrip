@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { Plus, Minus, Trash2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Footer from '@/components/layout/Footer';
 import { useRazorpayPayment } from '@/hooks/usePayment';
 import { PaymentProcessingModal } from '@/components/payment/Processing';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 
 
 const CartPage: React.FC = () => {
@@ -27,6 +28,16 @@ const CartPage: React.FC = () => {
 
     const { user } = useAuth();
     const router = useRouter();
+
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean;
+        itemId: string;
+        itemName: string;
+    }>({
+        open: false,
+        itemId: '',
+        itemName: '',
+    });
 
     // compute derived values with useMemo
     const totalQuantity = useMemo(() => {
@@ -138,21 +149,34 @@ const CartPage: React.FC = () => {
             return;
         }
 
-        const confirmed = typeof window !== 'undefined' ? window.confirm(`Remove "${name}" from your cart?`) : true;
-        if (!confirmed) return;
+        setConfirmModal({
+            open: true,
+            itemId: id,
+            itemName: name,
+        });
+    }, [cartItems]);
+
+    const handleConfirmDelete = useCallback(() => {
+        const { itemId, itemName } = confirmModal;
+        const itemToRemove = cartItems.find(i => i.id === itemId);
+        
+        if (!itemToRemove) {
+            toast.error('Item not found in cart');
+            return;
+        }
 
         try {
-            removeFromCart(id);
-            toast.success(`Removed "${name}" from cart`, {
+            removeFromCart(itemId);
+            toast.success(`Removed "${itemName}" from cart`, {
                 action: {
                     label: 'Undo',
                     onClick: () => {
                         const restoreItem = { ...itemToRemove, quantity: itemToRemove.quantity ?? 1 };
                         try {
                             addToCart(restoreItem);
-                            toast.success(`Restored "${name}"`);
+                            toast.success(`Restored "${itemName}"`);
                         } catch (err) {
-                            toast.error(`Could not restore "${name}"`);
+                            toast.error(`Could not restore "${itemName}"`);
                         }
                     }
                 }
@@ -160,7 +184,7 @@ const CartPage: React.FC = () => {
         } catch (err: any) {
             toast.error(`Could not remove item: ${err?.message ?? 'unknown error'}`);
         }
-    }, [cartItems, removeFromCart, addToCart]);
+    }, [confirmModal, cartItems, removeFromCart, addToCart]);
 
     // block refresh/back navigation while payment is processing
     useEffect(() => {
@@ -207,6 +231,18 @@ const CartPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50">
             {/* show modal overlay when processing */}
             <PaymentProcessingModal open={isProcessing} total={getTotalAmount()} />
+
+            {/* Confirmation modal for delete action */}
+            <ConfirmationModal
+                open={confirmModal.open}
+                onClose={() => setConfirmModal({ open: false, itemId: '', itemName: '' })}
+                onConfirm={handleConfirmDelete}
+                title="Remove Item"
+                message={`Are you sure you want to remove "${confirmModal.itemName}" from your cart?`}
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+            />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
                 {cartItems.length === 0 ? (

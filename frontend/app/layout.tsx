@@ -31,6 +31,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0ea5a4" />
       </head>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <body

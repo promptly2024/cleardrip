@@ -1,44 +1,38 @@
 import { prisma } from "@/lib/prisma"
 import { SubscriptionPlanType } from "@/schemas/subscriptionSchema";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export const getSubscription = async (userId: string) => {
     return await prisma.subscription.findFirst({
-        where: { userId: userId },
+        where: { userId, status: "CONFIRMED" },
         include: { plan: true },
-        orderBy: { createdAt: "desc" },
-    })
+    });
 }
 
-// Will Improve this later to handle different plans and durations
 export const createSubscription = async (userId: string, planId: string) => {
-    // delete all subscription which are created before 5 minute ago and have no payment
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    await prisma.subscription.deleteMany({
-        where: {
-            createdAt: { lt: fiveMinutesAgo },
-            PaymentOrder: { none: {} }
-        }
-    });
-    // Get the plan details
-    const plan = await prisma.subscriptionPlan.findUnique({
-        where: { id: planId }
-    });
-    if (!plan) {
-        throw new Error("Invalid subscription plan.");
-    }
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan)
+        throw new Error("Subscription plan not found.");
+
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + plan.duration);
+
     return await prisma.subscription.create({
         data: {
-            userId: userId,
+            userId,
             planId,
-            startDate: new Date(),
-            endDate: new Date(new Date().setDate(new Date().getDate() + plan.duration))
-        }
-    })
+            startDate,
+            endDate,
+            status: "PENDING",
+        },
+        include: { plan: true },
+    });
 }
 
 export const getAllSubscriptionsPlans = async () => {
     return await prisma.subscriptionPlan.findMany({
-        orderBy: { price: "asc" },
+        orderBy: { createdAt: "desc" },
     });
 };
 
@@ -46,17 +40,35 @@ export const createSubscriptionPlans = async (data: SubscriptionPlanType) => {
     return await prisma.subscriptionPlan.create({
         data: {
             name: data.name,
-            price: data.price,
+            description: data.description,
+            price: new Decimal(data.price),
             duration: data.duration,
-            description: data.description
-        }
+        },
+    });
+};
+
+export const getSubscriptionPlanById = async (id: string) => {
+    return await prisma.subscriptionPlan.findUnique({
+        where: { id },
     });
 };
 
 export const deleteSubscriptionById = async (id: string) => {
     return await prisma.subscriptionPlan.delete({
-        where: {
-            id
-        }
-    })
+        where: { id },
+    });
+}
+
+export const isSubscriptionPlanUsed = async (planId: string) => {
+    const count = await prisma.subscription.count({
+        where: { planId },
+    });
+    return count > 0;
+}
+
+export const toggleSubscriptionPlanActiveStatus = async (planId: string, isActive: boolean) => {
+    return await prisma.subscriptionPlan.update({
+        where: { id: planId },
+        data: { isActive },
+    });
 }

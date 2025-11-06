@@ -24,17 +24,17 @@ model User {
   isEmailVerified Boolean @default(false)
   isPhoneVerified Boolean @default(false)
 
-  loyaltyStatus LoyaltyStatus?   @default(BRONZE)
-  otpSessions   OTPSession[]
-  bookings      ServiceBooking[]
-  subscriptions Subscription[]
-  tdsLogs       TDSLog[]
-  notifications Notification[]
-  whatsappLogs  WhatsAppLog[]
+  loyaltyStatus       LoyaltyStatus?       @default(BRONZE)
+  otpSessions         OTPSession[]
+  bookings            ServiceBooking[]
+  subscriptions       Subscription[]
+  tdsLogs             TDSLog[]
+  notifications       Notification[]
+  whatsappLogs        WhatsAppLog[]
   passwordResetTokens PasswordResetToken[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  PaymentOrder  PaymentOrder[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  PaymentOrder        PaymentOrder[]
 }
 
 model Address {
@@ -49,14 +49,14 @@ model Address {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  token     String   @unique 
-  plainToken String 
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  token      String    @unique
+  plainToken String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -163,10 +163,11 @@ enum ServiceStatus {
 
 model SubscriptionPlan {
   id          String   @id @default(uuid())
-  name        String // e.g. "Monthly", "Annual", "Premium"
-  description String? // optional details about the plan
-  price       Decimal // cost of the plan
-  duration    Int // in days (e.g. 30 = monthly, 365 = yearly)
+  name        String
+  description String?
+  price       Decimal
+  duration    Int
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -93,8 +93,13 @@ export const createOrder = async (req: FastifyRequest, reply: FastifyReply) => {
             totalAmount = Number(plan.price)
 
             // create subscription record here where `plan` and `subscriptionPlanId` are known/validated
-            const subscription = await createSubscription(userId, subscriptionPlanId);
-            createdSubscriptionId = subscription.id
+            try {
+                const subscription = await createSubscription(userId, subscriptionPlanId);
+                createdSubscriptionId = subscription.id
+            } catch (subscriptionError) {
+                logger.error("Failed to create subscription", subscriptionError)
+                return reply.code(500).send({ error: "Failed to create subscription", details: subscriptionError instanceof Error ? subscriptionError.message : String(subscriptionError) })
+            }
         }
 
         if (totalAmount <= 0)

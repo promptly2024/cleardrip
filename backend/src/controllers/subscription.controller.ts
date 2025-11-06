@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
 import { SubscriptionPlanSchema } from "@/schemas/subscriptionSchema";
-import { createSubscription, createSubscriptionPlans, deleteSubscriptionById, getAllSubscriptionsPlans, getSubscription } from "@/services/subscription.service";
+import { createSubscription, createSubscriptionPlans, deleteSubscriptionById, getAllSubscriptionsPlans, getSubscription, getSubscriptionPlanById, isSubscriptionPlanUsed, toggleSubscriptionPlanActiveStatus } from "@/services/subscription.service";
 import { sendError } from "@/utils/errorResponse";
 import { FastifyReply, FastifyRequest } from "fastify";
 
@@ -105,6 +105,14 @@ export async function deleteSubscriptionHandler(req: FastifyRequest, res: Fastif
     }
 
     try {
+        const subscription = await getSubscriptionPlanById(id);
+        const isUsed = await isSubscriptionPlanUsed(id);
+        if (isUsed) {
+            return sendError(res, 400, 'Cannot delete subscription plan, you can make it inactive instead');
+        }
+        if (!subscription) {
+            return sendError(res, 404, 'Subscription not found');
+        }
         const deleted = await deleteSubscriptionById(id);
         if (!deleted) {
             return sendError(res, 404, 'Subscription not found');
@@ -113,6 +121,32 @@ export async function deleteSubscriptionHandler(req: FastifyRequest, res: Fastif
         return res.status(200).send({
             message: 'Subscription deleted successfully',
             success: true,
+        });
+    } catch (error) {
+        logger.error(error);
+        return sendError(res, 500, 'Internal server error');
+    }
+}
+
+export async function ToggleSubscriptionActiveStatusHandler(req: FastifyRequest, res: FastifyReply) {
+    const { id } = req.params as { id: string };
+    if (!id) {
+        return sendError(res, 400, 'Subscription id is required');
+    }
+
+    try {
+        const subscription = await getSubscriptionPlanById(id);
+        if (!subscription) {
+            return sendError(res, 404, 'Subscription not found');
+        }
+        const updated = await toggleSubscriptionPlanActiveStatus(id, !subscription.isActive);
+        if (!updated) {
+            return sendError(res, 400, 'Failed to update subscription status');
+        }
+        return res.status(200).send({
+            message: `Subscription ${updated.isActive ? 'activated' : 'deactivated'} successfully`,
+            success: true,
+            data: updated,
         });
     } catch (error) {
         logger.error(error);
