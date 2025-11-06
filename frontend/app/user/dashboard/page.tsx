@@ -8,11 +8,11 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ProfileComponent from '@/components/dashboard/Profile';
-import SettingsPage from '@/components/dashboard/Settings';
 import MyServices from '@/components/dashboard/MyServices';
 import { OverviewTab } from '@/components/dashboard/OverviewTab';
 import Payment from '@/components/dashboard/Payment';
+import ProfileComponent from '@/components/dashboard/Profile';
+import SettingsPage from '@/components/dashboard/Settings';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
